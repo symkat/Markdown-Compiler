@@ -1,4 +1,4 @@
-package Markdown::Compiler::Target::HTML;
+package Markdown::Compiler::Target::Tree;
 use Moo;
 use Storable qw( dclone );
 
@@ -6,13 +6,7 @@ has tree => (
     is => 'ro',
 );
 
-has result => (
-    is      => 'ro',
-    lazy    => 1,
-    builder => sub { shift->html },
-);
-
-has html => (
+has tree => (
     is      => 'ro',
     lazy    => 1,
     builder => '_build_html',
@@ -40,7 +34,7 @@ has functions => (
     }
 );
 
-sub _build_html {
+sub _build_tree {
     my ( $self ) = @_;
 
     return $self->_compile( dclone $self->tree );
@@ -77,6 +71,10 @@ sub _compile {
 
 sub header {
     my ( $self, $node, $content ) = @_;
+
+    return sprintf( "header( size => ) )
+
+    "header()
 
     my $header = "h" . $node->size;
 
@@ -180,3 +178,4 @@ sub list {
 
 
 1;
+

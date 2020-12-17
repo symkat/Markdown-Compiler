@@ -4,12 +4,14 @@ use strict;
 use Test::More;
 use Import::Into;
 use Exporter;
+use Markdown::Compiler;
 use Markdown::Compiler::Lexer;
 use Markdown::Compiler::Parser;
 use Markdown::Compiler::Target::HTML;
+use Data::Dumper::Concise;
 
 push our @ISA, qw( Exporter );
-push our @EXPORT, qw( _test_dump_lexer _test_dump_parser _test_dump_html );
+push our @EXPORT, qw( build_and_test _test_dump_lexer _test_dump_parser _test_dump_html );
 
 sub import {
     shift->export_to_level(1);
@@ -21,47 +23,87 @@ sub import {
     Test::More->import::into($target);
 }
 
-sub _test_dump_lexer {
-    my ( $source ) = @_;
+# build_and_test
+#
+# source can be:
+#       1. string ->
+#       2. hash   ->
+#       3. code   ->
+#
+# expect can be:
+#       code_name => arguments ( &_test_run_$code_name($compiler,$arguments) )
+sub build_and_test {
+    my ( $name, $source, $expects ) = @_;
+    my ( undef, $file, $line ) = caller;
 
-    my $lexer = Markdown::Compiler::Lexer->new( source => $source );
+    if ( ref($source) and ( ref($source) ne 'CODE' or ref($source) ne 'HASH' ) ) {
+        die "Error: Invalid type for \$source @ $file:$line. Must be HASH, CODE or plain string.\n";
+    }
 
-    foreach my $token ( @{$lexer->tokens} ) {
+    my $compiler = ref($source) eq 'HASH'
+        ? Markdown::Compiler->new( %{$source} )
+        : ref($source) eq 'CODE'
+            ? $source->()
+            : Markdown::Compiler->new( source => $source );
+
+    foreach my $expect ( @{$expects} ) {
+        my $method_name = shift @{$expect};
+
+        my $test = __PACKAGE__->can( "_test_run_$method_name" )
+            or die "Invalid test function: $method_name @ $file:$line\n";
+
+        $test->($compiler, $name, $file, $line, @{$expect});
+    }
+
+    return $compiler;
+}
+
+sub _test_run_dump_lexer {
+    my ( $compiler, $name, $file, $line, @args ) = @_;
+
+    foreach my $token ( @{$compiler->lexer->tokens} ) {
         ( my $content = $token->content  ) =~ s/\n//g;
         printf( "%20s | %s\n", $content, $token->type );
     }
 }
 
-sub _test_dump_parser {
-    my ( $source ) = @_;
+sub _test_run_dump_parser {
+    my ( $compiler, $name, $file, $line, @args ) = @_;
 
-    my $lexer = Markdown::Compiler::Lexer->new( source => $source );
-    my $tree = Markdown::Compiler::Parser->new( stream => $lexer->tokens )->tree;
+    my $tree = $compiler->parser->tree;
 
-    use Data::Dumper;
-    print Dumper $tree;
-
-    # return @tree;
-
+    print Dumper($tree);
 }
 
-sub _test_dump_html {
-    my ( $source ) = @_;
+# Paragraph
+# String
+# String
+# String => [ content => 'foo', children => '' ],
+#
+# 
+# 
+# 
+#
+#
+sub _test_run_assert_parse_tree {
+    my ( $compiler, $name, $file, $line, @args ) = @_;
 
-    my $lexer = Markdown::Compiler::Lexer->new( source => $source );
-    my $tree = Markdown::Compiler::Parser->new( stream => $lexer->tokens )->tree;
-    my $html = Markdown::Compiler::Target::HTML->new( tree => $tree )->html;
+    my $tree = $compiler->parser->tree;
 
-    print "==== HTML BEGIN ====\n";
-    print "$html\n";
-    print "==== HTML END   ====\n";
-
+    print Dumper($tree);
 }
 
-sub assert_lexer {
 
+# This one I need to think through!
+sub _test_run_result_is {
+    my ( $compiler, $name, $file, $line, $match ) = @_;
+
+    if ( ref($match) eq 'REGEXP' ) {
+        ok( $compiler->result =~ $match, sprintf( "%s:%d: %s", $file, $line, $name ) );
+    } else {
+        is ( $compiler->result, $match, sprintf( "%s:%d: %s", $file, $line, $name ) );
+    }
 }
-
 
 
 1;

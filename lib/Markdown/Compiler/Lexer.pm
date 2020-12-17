@@ -331,7 +331,7 @@ BEGIN {
                     source => $self->source 
                 );
             } elsif ( $content =~ /^\*\*/ ) { 
-                return Markdown::Compiler::Lexer::Token::Italic->new( 
+                return Markdown::Compiler::Lexer::Token::Bold->new( 
                     start  => $self->start, 
                     end    => $self->end, 
                     source => $self->source 
@@ -349,7 +349,7 @@ BEGIN {
                     source => $self->source 
                 );
             } elsif ( $content =~ /^\*/ ) {
-                return Markdown::Compiler::Lexer::Token::Bold->new( 
+                return Markdown::Compiler::Lexer::Token::Italic->new( 
                     start  => $self->start, 
                     end    => $self->end, 
                     source => $self->source 

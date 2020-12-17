@@ -9,11 +9,27 @@ has source => (
     required => 1,
 );
 
+has lexer => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => sub {
+        Markdown::Compiler::Lexer->new( source => shift->source );
+    },
+);
+
+has parser => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => sub {
+        Markdown::Compiler::Parser->new( stream => shift->stream );
+    },
+);
+
 has stream => (
     is      => 'ro',
     lazy    => 1,
     builder => sub {
-        Markdown::Compiler::Lexer->new( source => shift->source )->tokens;
+        shift->lexer->tokens;
     },
 );
 
@@ -21,7 +37,7 @@ has tree => (
     is      => 'ro',
     lazy    => 1,
     builder => sub {
-        Markdown::Compiler::Parser->new( stream => shift->stream )->tree;
+        shift->parser->tree;
     },
 );
 
@@ -33,11 +49,11 @@ has compiler => (
     },
 );
 
-has markdown => (
+has result => (
     is      => 'ro',
     lazy    => 1,
     builder => sub {
-        shift->compiler->markdown;
+        shift->compiler->result;
     }
 );
 
