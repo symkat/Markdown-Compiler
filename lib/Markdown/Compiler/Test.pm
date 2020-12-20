@@ -2,6 +2,7 @@ package Markdown::Compiler::Test;
 use warnings;
 use strict;
 use Test::More;
+use Test::Deep;
 use Import::Into;
 use Exporter;
 use Markdown::Compiler;
@@ -21,6 +22,7 @@ sub import {
     warnings->import::into($target);
     strict->import::into($target);
     Test::More->import::into($target);
+    Test::Deep->import::into($target);
 }
 
 # build_and_test
@@ -103,6 +105,12 @@ sub _test_run_result_is {
     } else {
         is ( $compiler->result, $match, sprintf( "%s:%d: %s", $file, $line, $name ) );
     }
+}
+
+sub _test_run_metadata_is {
+    my ( $compiler, $name, $file, $line, $match ) = @_;
+
+    cmp_deeply( $compiler->parser->metadata, $match, sprintf( "%s:%d: %s", $file, $line, $name ) );
 }
 
 

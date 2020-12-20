@@ -194,6 +194,12 @@ has tree => (
     builder => '_build_tree',
 );
 
+has metadata => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_metadata',
+);
+
 
 sub _build_tree {
     my ( $self ) = @_;
@@ -201,6 +207,15 @@ sub _build_tree {
     my @tokens = @{$self->stream};
 
     return $self->_parse(\@tokens);
+}
+
+sub _build_metadata {
+    my ( $self ) = @_;
+
+    if ( $self->tree->[0] and ref($self->tree->[0]) eq 'Markdown::Compiler::Parser::Node::Metadata' ) {
+        return $self->tree->[0]->data;
+    }
+    return undef;
 }
 
 sub _parse {
