@@ -3,6 +3,7 @@ use warnings;
 use strict;
 use Test::More;
 use Test::Deep;
+use Test::Differences;
 use Import::Into;
 use Exporter;
 use Markdown::Compiler;
@@ -77,6 +78,12 @@ sub _test_run_dump_parser {
     print Dumper($tree);
 }
 
+sub _test_run_dump_result {
+    my ( $compiler, $name, $file, $line, @args ) = @_;
+
+    print "=== HTML ===\n" . $compiler->result . "\n=== END ===\n\n";
+}
+
 # Paragraph
 # String
 # String
@@ -103,7 +110,7 @@ sub _test_run_result_is {
     if ( ref($match) eq 'REGEXP' ) {
         ok( $compiler->result =~ $match, sprintf( "%s:%d: %s", $file, $line, $name ) );
     } else {
-        is ( $compiler->result, $match, sprintf( "%s:%d: %s", $file, $line, $name ) );
+        eq_or_diff ( $compiler->result, $match, sprintf( "%s:%d: %s", $file, $line, $name ) );
     }
 }
 

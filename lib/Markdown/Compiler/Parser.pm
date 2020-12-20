@@ -143,7 +143,23 @@ BEGIN {
     }
 
     {
-        package Markdown::Compiler::Parser::Node::List;
+        package Markdown::Compiler::Parser::Node::List::Unordered;
+        use Moo;
+        extends 'Markdown::Compiler::Parser::Node';
+
+        1;
+    }
+
+    {
+        package Markdown::Compiler::Parser::Node::List::Unordered::Item;
+        use Moo;
+        extends 'Markdown::Compiler::Parser::Node';
+
+        1;
+    }
+    
+    {
+        package Markdown::Compiler::Parser::Node::List::Item::String;
         use Moo;
         extends 'Markdown::Compiler::Parser::Node';
 
@@ -295,10 +311,9 @@ sub _parse {
         
         # Lists
         elsif ( $token->type eq 'Item' ) {
-            push @tree, Markdown::Compiler::Parser::Node::List->new(
-                tokens   => [ $token ],
-                children => [ $self->_parse_codeblock( $tokens ) ],
-            );
+            # Put the item token back so that _parse_list knows what kind it is.
+            unshift @{$tokens}, $token;
+            push @tree, $self->_parse_list( $tokens );
             next;
         }
 
@@ -530,8 +545,160 @@ sub _parse_codeblock {
     return @tree;
 }
 
+# Lists are:
+#
+# Ordered ( Numbered )
+#       List Item (Paragraph-like Processing)
+#       New Line terminates (We'll ignore that space-carry-on bullshit for now)
+#       Match Order Preceeding (Spaces before Item), and go to next List Item OR return tree
+#
+# Unordered ( Bulleted)
+# 
+#
+# Functions:
+# 
+# _parse_list_unordered( $offset_for_next_match, $tokens )
+# _parse_list_ordered( $offset_for_next_match, $tokens  )
+# _parse_list_item( $tokens )
+#
+#
+#
+
+sub _parse_list_item {
+    my ( $self, $tokens ) = @_;
+
+    my @tree;
+
+    while ( defined ( my $token = shift @{ $tokens } ) ) {
+        # Exit Conditions:
+        #
+        #   - No more tokens (after while loop)
+        #   - Run into the next CodeBlock token.
+        if ( $token->type eq 'LineBreak' ) {
+            return @tree;
+        }
+
+        push @tree, Markdown::Compiler::Parser::Node::List::Item::String->new(
+            content => $token->content,
+            tokens  => [ $token ],
+        );
+    }
+
+    return @tree;
+}
+
+sub _parse_list_unordered {
+    my ( $self, $lvl, $tokens ) = @_;
+
+    my @tree;
+
+    while ( defined ( my $token = shift @{ $tokens } ) ) {
+        # warn "Looking at token... " . $token->type . "\n";
+        # Exit Conditions.
+        if ( $token->type eq 'LineBreak' ) {
+            if ( exists $tokens->[0] and $tokens->[0]->type eq 'LineBreak' ) {
+                # Double Line Break, Bail Out
+                return @tree;
+            }
+            # Single Line Break - Ignore
+            next;
+        }
+
+        # Handle the next item ( root level )
+        elsif ( $lvl == 0 and $token->type eq 'Item' ) {
+            push @tree, Markdown::Compiler::Parser::Node::List::Unordered::Item->new(
+                tokens => [ $token ],
+                children => [ $self->_parse_list_item( $tokens ) ],
+            );
+            next;
+        }
+
+        # Transitioning from level 1 to 0 doesn't use the space method below,
+        # it uses this one here.
+        elsif ( $token->type eq 'Item' ) {
+            # Put the space/item token back, return our tree.
+            unshift @{$tokens}, $token;
+            return @tree;
+        }
+
+        # Handle Space
+        elsif ( $token->type eq 'Space' ) {
+            # warn "After this space token is a " . $tokens->[0]->type . " with " . $tokens->[0]->content . " content\n";
+            # Case: This is the ordering level for this invocation, stay in this list.
+            if ( $token->length == $lvl ) {
+                $token = shift @{$tokens};
+                if ( $token->type eq 'Word' ) { # Golden, correct stay-in-list level
+                    $token = shift @{$tokens}
+                        if $tokens->[0]->type eq 'Space'; # The space before the Item
+                    push @tree, Markdown::Compiler::Parser::Node::List::Unordered::Item->new(
+                        tokens => [ $token ],
+                        children => [ $self->_parse_list_item( $tokens ) ],
+                    );
+                    next;
+                }
+                die "Error: It shouldn't have gotten here, we're fucked";
+            }
+
+            # Case: This list is now complete, the next request was for the next parent item.
+            elsif ( $token->length < $lvl or $token->type eq 'Item' ) {
+                # Put the space/item token back, return our tree.
+                unshift @{$tokens}, $token;
+                return @tree;
+            }
+
+
+            # Case: This is a new list, existing under the last Item
+            elsif ( $token->length > $lvl ) {
+                unshift @{$tokens}, $token;
+                push @tree, Markdown::Compiler::Parser::Node::List::Unordered->new(
+                    tokens   => [ ],
+                    children => [ $self->_parse_list_unordered( $token->length, $tokens ) ]
+                );
+                next;
+            }
+
+
+            else {
+                die "Parser::_parse_list_unordered() could not handle token " . $token->type;
+            }
+
+        }
+    }
+    return @tree;
+}
+
 sub _parse_list {
     my ( $self, $tokens ) = @_;
+
+    my @tree;
+
+    while ( defined ( my $token = shift @{ $tokens } ) ) {
+        # Exit Conditions:
+        #
+        #   - No more tokens (after while loop)
+        #   - Two new line tokens in a rwo (first one is eaten)
+        if ( $token->type eq 'LineBreak' ) {
+            if ( exists $tokens->[0] and $tokens->[0]->type eq 'LineBreak' ) {
+                # Double Line Break, Bail Out
+                return @tree;
+            }
+            # Single Line Break - Ignore
+            next;
+        }
+        
+        if ( $token->type eq 'Item' ) {
+            unshift @{$tokens}, $token;
+            push @tree, Markdown::Compiler::Parser::Node::List::Unordered->new(
+                tokens   => [ ], 
+                children => [ $self->_parse_list_unordered( 0, $tokens ) ]
+            );
+            next;
+        }
+        
+        die "Parser::_parse_list() could not handle token " . $token->type;
+
+    }
+    return @tree;
 
         # Token Types:
         # package Markdown::Compiler::Lexer;
@@ -590,6 +757,42 @@ sub _parse_metadata {
         data    => $struct,
     };
 }
+
+sub show_tree {
+    my ( $self ) = @_;
+
+    print $self->_pretty_print(0, $self->tree);
+}
+
+sub _pretty_print {
+    my ( $self, $index, $tokens ) = @_;
+
+    $index ||= 0;
+    my $str;
+
+    foreach my $token ( @{$tokens} ) {
+
+        my $tab = " " x ( $index x 2 );
+
+        my $class = ref($token);
+        $class =~ s|Markdown::Compiler::Parser::Node::||;
+
+        my $content = join "", map { $_->content } (@{$token->tokens});
+        $content =~ s/\n/\\n/g;
+        $content =~ s/\r/\\n/g;
+
+        $str .= 
+            " " x ( $index * 2 ) .
+            sprintf( '%-' . (35 - ($index * 2)) . 's', $class ) .
+            "| $content\n";
+
+        $str .= $self->_pretty_print( $index + 1, $token->children )
+            if $token->children;
+    }
+    return $str;
+}
+
+
 
 
 1;

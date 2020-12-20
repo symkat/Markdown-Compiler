@@ -414,6 +414,12 @@ BEGIN {
         sub type  { 'Space' }
         sub match { [ qr/\G\s+/ ] }
 
+        has length => (
+            is => 'ro',
+            lazy => 1,
+            builder => sub { length(shift->content) },
+        );
+
         1;
     }
 

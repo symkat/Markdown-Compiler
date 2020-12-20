@@ -24,7 +24,9 @@ has functions => (
     default => sub {
         return +{
             'Markdown::Compiler::Parser::Node::Header'                 => 'header', 
+
             'Markdown::Compiler::Parser::Node::HR'                     => 'hr',
+
             'Markdown::Compiler::Parser::Node::Paragraph'              => 'paragraph',
             'Markdown::Compiler::Parser::Node::Paragraph::BoldItalic'  => 'paragraph_bolditalic',
             'Markdown::Compiler::Parser::Node::Paragraph::Bold'        => 'paragraph_bold',
@@ -32,11 +34,17 @@ has functions => (
             'Markdown::Compiler::Parser::Node::Paragraph::String'      => 'paragraph_string',
             'Markdown::Compiler::Parser::Node::Paragraph::Link'        => 'paragraph_link',
             'Markdown::Compiler::Parser::Node::Paragraph::Image'       => 'paragraph_image',
+
             'Markdown::Compiler::Parser::Node::Table'                  => 'table',
+
             'Markdown::Compiler::Parser::Node::Blockquote'             => 'blockquote',
+
             'Markdown::Compiler::Parser::Node::CodeBlock'              => 'codeblock',
             'Markdown::Compiler::Parser::Node::CodeBlock::String'      => 'codeblock_string',
-            'Markdown::Compiler::Parser::Node::List'                   => 'list',
+
+            'Markdown::Compiler::Parser::Node::List::Unordered'        => 'unordered_list',
+            'Markdown::Compiler::Parser::Node::List::Unordered::Item'  => 'list_item',
+            'Markdown::Compiler::Parser::Node::List::Item::String'     => 'list_item_string',
         }
     }
 );
@@ -181,9 +189,27 @@ sub codeblock_string {
 
 }
 
-sub list {
+sub unordered_list {
+    my ( $self, $node, $content ) = @_;
+
+    return "<ul>\n$content\n</ul>\n";
 
 }
+
+sub list_item {
+    my ( $self, $node, $content ) = @_;
+
+    return "<li>$content</li>\n";
+
+}
+
+sub list_item_string {
+    my ( $self, $node ) = @_;
+
+    return $node->content;
+}
+
+
 
 
 
