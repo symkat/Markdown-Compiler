@@ -270,7 +270,6 @@ sub _parse {
         
         # Code Blocks
         elsif ( $token->type eq 'CodeBlock' ) {
-            warn "Entering code block on line " . $token->line . "\n";
             push @tree, Markdown::Compiler::Parser::Node::CodeBlock->new(
                 language => $token->language,
                 tokens   => [ $token ],
@@ -505,7 +504,6 @@ sub _parse_codeblock {
         #   - No more tokens (after while loop)
         #   - Run into the next CodeBlock token.
         if ( $token->type eq 'CodeBlock' ) {
-            warn "Exiting code block at " . $token->line . "\n";
             return @tree;
         }
 
