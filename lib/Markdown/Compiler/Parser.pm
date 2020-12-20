@@ -122,7 +122,28 @@ BEGIN {
     }
 
     {
-        package Markdown::Compiler::Parser::Node::Codeblock;
+        package Markdown::Compiler::Parser::Node::CodeBlock;
+        use Moo;
+        extends 'Markdown::Compiler::Parser::Node';
+
+        has language => (
+            is => 'ro',
+        );
+
+        1;
+    }
+
+    {
+        package Markdown::Compiler::Parser::Node::CodeBlock::String;
+        use Moo;
+        extends 'Markdown::Compiler::Parser::Node';
+
+        1;
+
+    }
+
+    {
+        package Markdown::Compiler::Parser::Node::List;
         use Moo;
         extends 'Markdown::Compiler::Parser::Node';
 
@@ -130,7 +151,30 @@ BEGIN {
     }
 
     {
-        package Markdown::Compiler::Parser::Node::List;
+        package Markdown::Compiler::Parser::Node::Metadata;
+        use Moo;
+        extends 'Markdown::Compiler::Parser::Node';
+
+        has data => (
+            is => 'ro',
+        );
+
+        # content => $content,
+        # tokens  => [ @tree ],
+        # data    => $struct,
+        1;
+    }
+
+    {
+        package Markdown::Compiler::Parser::Node::Metadata::Key;
+        use Moo;
+        extends 'Markdown::Compiler::Parser::Node';
+
+        1;
+    }
+
+    {
+        package Markdown::Compiler::Parser::Node::Metadata::Value;
         use Moo;
         extends 'Markdown::Compiler::Parser::Node';
 
@@ -186,6 +230,20 @@ sub _parse {
         
         # HR
         elsif ( $token->type eq 'HR' ) {
+            # When is an HR not an HR? -- When it's actually the beginning
+            # of metadata.  If this is the first token, then we are dealing
+            # with metadata, not an HR.
+            if ( $token->start == 0 ) {
+                push @tree, Markdown::Compiler::Parser::Node::Metadata->new(
+                    %{ $self->_parse_metadata($tokens) },
+                );
+                    # language => $token->language,
+                    # tokens   => [ $token ],
+                    # children => [ $self->_parse_metadata( $tokens ) ],
+                next;
+            }
+
+            # Otherwise, we just have a simple HR token.
             push @tree, Markdown::Compiler::Parser::Node::HR->new(
                 tokens   => [ $token ],
             );
@@ -211,8 +269,10 @@ sub _parse {
         }
         
         # Code Blocks
-        elsif ( $token->type eq 'Codeblock' ) {
-            push @tree, Markdown::Compiler::Parser::Node::Codeblock->new(
+        elsif ( $token->type eq 'CodeBlock' ) {
+            warn "Entering code block on line " . $token->line . "\n";
+            push @tree, Markdown::Compiler::Parser::Node::CodeBlock->new(
+                language => $token->language,
                 tokens   => [ $token ],
                 children => [ $self->_parse_codeblock( $tokens ) ],
             );
@@ -236,7 +296,8 @@ sub _parse {
 
         # Unknown Token?
         else {
-            die "Parser::_parse() could not handle token " . $token->type;
+            use Data::Dumper::Concise;
+            die "Parser::_parse() could not handle token " . $token->type . " on line " . $token->line;
         }
     }
     return [ @tree ];
@@ -263,7 +324,7 @@ sub _parse_paragraph {
         # Exit Conditions Continued:
         #
         #    - Tokens which are invalid in this context, put the token back and return our @ree
-        if ( grep { $token->type eq $_ } (qw(TableStart CodeBlock BlockQuote List HR)) ) {
+        if ( grep { $token->type eq $_ } (qw(TableStart CodeBlock BlockQuote List HR Header)) ) {
             unshift @$tokens, $token;
             return @tree;
         }
@@ -304,6 +365,13 @@ sub _parse_paragraph {
             # Eat tokens until the next BoldItalic block, these tokens will be recursively processed.
             while ( defined ( my $todo_token = shift @{ $tokens } ) ) {
                 last if $todo_token->type eq 'BoldItalic';
+
+                # Don't cross linebreak boundries
+                if ( $todo_token->type eq 'LineBreak' ) {
+                    unshift @{$tokens}, $todo_token;
+                    last;
+                }
+
                 push @todo, $todo_token;
             }
 
@@ -322,6 +390,13 @@ sub _parse_paragraph {
             # Eat tokens until the next Bold block, these tokens will be recursively processed.
             while ( defined ( my $todo_token = shift @{ $tokens } ) ) {
                 last if $todo_token->type eq 'Bold';
+
+                # Don't cross linebreak boundries
+                if ( $todo_token->type eq 'LineBreak' ) {
+                    unshift @{$tokens}, $todo_token;
+                    last;
+                }
+
                 push @todo, $todo_token;
             }
 
@@ -340,6 +415,13 @@ sub _parse_paragraph {
             # Eat tokens until the next Italic block, these tokens will be recursively processed.
             while ( defined ( my $todo_token = shift @{ $tokens } ) ) {
                 last if $todo_token->type eq 'Italic';
+
+                # Don't cross linebreak boundries
+                if ( $todo_token->type eq 'LineBreak' ) {
+                    unshift @{$tokens}, $todo_token;
+                    last;
+                }
+
                 push @todo, $todo_token;
             }
 
@@ -415,27 +497,24 @@ sub _parse_blockquote {
 sub _parse_codeblock {
     my ( $self, $tokens ) = @_;
 
-        # Token Types:
-        # package Markdown::Compiler::Lexer;
-        # package Markdown::Compiler::Lexer::Token;
-        # package Markdown::Compiler::Lexer::Token::EscapedChar;
-        # package Markdown::Compiler::Lexer::Token::CodeBlock;
-        # package Markdown::Compiler::Lexer::Token::HR;
-        # package Markdown::Compiler::Lexer::Token::Image;
-        # package Markdown::Compiler::Lexer::Token::Link;
-        # package Markdown::Compiler::Lexer::Token::Item;
-        # package Markdown::Compiler::Lexer::Token::TableStart;
-        # package Markdown::Compiler::Lexer::Token::TableHeaderSep;
-        # package Markdown::Compiler::Lexer::Token::BlockQuote;
-        # package Markdown::Compiler::Lexer::Token::Header;
-        # package Markdown::Compiler::Lexer::Token::Bold;
-        # package Markdown::Compiler::Lexer::Token::Italic;
-        # package Markdown::Compiler::Lexer::Token::BoldItalic;
-        # package Markdown::Compiler::Lexer::Token::BoldItalicMaker;
-        # package Markdown::Compiler::Lexer::Token::LineBreak;
-        # package Markdown::Compiler::Lexer::Token::Space;
-        # package Markdown::Compiler::Lexer::Token::Word;
-        # package Markdown::Compiler::Lexer::Token::Char;
+    my @tree;
+
+    while ( defined ( my $token = shift @{ $tokens } ) ) {
+        # Exit Conditions:
+        #
+        #   - No more tokens (after while loop)
+        #   - Run into the next CodeBlock token.
+        if ( $token->type eq 'CodeBlock' ) {
+            warn "Exiting code block at " . $token->line . "\n";
+            return @tree;
+        }
+
+        push @tree, Markdown::Compiler::Parser::Node::CodeBlock::String->new(
+            content => $token->content,
+            tokens  => [ $token ],
+        );
+    }
+    return @tree;
 }
 
 sub _parse_list {
@@ -463,5 +542,41 @@ sub _parse_list {
         # package Markdown::Compiler::Lexer::Token::Word;
         # package Markdown::Compiler::Lexer::Token::Char;
 }
+
+sub _parse_metadata {
+    my ( $self, $tokens ) = @_;
+
+    my @tree;
+
+    while ( defined ( my $token = shift @{ $tokens } ) ) {
+        # Exit Conditions:
+        #
+        #     - We run into the HR block.
+        if ( $token->type eq 'HR' ) {
+            last;
+        }
+
+        if ( grep { $token->type eq $_ } ( qw( EscapedChar Space Word Char LineBreak  ) ) ) {
+            push @tree, $token;
+            next;
+        }
+
+        die "Parser::_parse_metadata() could not handle token " . $token->type;
+    }
+
+
+    my $content = join "", map { $_->content } @tree;
+
+    require YAML::XS;
+    my $struct = YAML::XS::Load( $content );
+
+
+    return {
+        content => $content,
+        tokens  => [ @tree ],
+        data    => $struct,
+    };
+}
+
 
 1;

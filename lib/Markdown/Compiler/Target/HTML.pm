@@ -34,7 +34,8 @@ has functions => (
             'Markdown::Compiler::Parser::Node::Paragraph::Image'       => 'paragraph_image',
             'Markdown::Compiler::Parser::Node::Table'                  => 'table',
             'Markdown::Compiler::Parser::Node::Blockquote'             => 'blockquote',
-            'Markdown::Compiler::Parser::Node::Codeblock'              => 'codeblock',
+            'Markdown::Compiler::Parser::Node::CodeBlock'              => 'codeblock',
+            'Markdown::Compiler::Parser::Node::CodeBlock::String'      => 'codeblock_string',
             'Markdown::Compiler::Parser::Node::List'                   => 'list',
         }
     }
@@ -125,21 +126,36 @@ sub paragraph_string {
 sub paragraph_link {
     my ( $self, $node ) = @_;
 
-    return sprintf( '<a href="%s" title="%s">%s</a>', 
-        $node->href, 
-        $node->text  ? $node->text  : "",
-        $node->title ? $node->title : "",
-    );
+    if ( $node->title ) {
+        return sprintf( '<a href="%s" title="%s">%s</a>',
+            $node->href,
+            $node->title,
+            $node->text,
+        );
+    } else {
+        return sprintf( '<a href="%s">%s</a>',
+            $node->href,
+            $node->text ? $node->text : $node->href,
+        );
+    }
+
 }
 
 sub paragraph_image {
     my ( $self, $node ) = @_;
 
-    return sprintf( '<img src="%s" title="%s" alt="%s">', 
-        $node->href, 
-        $node->text  ? $node->text  : "",
-        $node->title ? $node->title : "",
-    );
+    if ( $node->title ) {
+        return sprintf( '<img src="%s" title="%s" alt="%s">',
+            $node->href,
+            $node->title,
+            $node->text
+        );
+    } else {
+        return sprintf( '<img src="%s" alt="%s">',
+            $node->href,
+            $node->text ? $node->text : $node->href,
+        );
+    }
 }
 
 sub table {
@@ -151,6 +167,17 @@ sub blockquote {
 }
 
 sub codeblock {
+    my ( $self, $node, $content ) = @_;
+
+    return $node->language
+        ? "<pre language=\"" . $node->language . "\">\n$content</pre>\n\n"
+        : "<pre>\n$content</pre>\n\n"
+}
+
+sub codeblock_string {
+    my ( $self, $node ) = @_;
+
+    return $node->content;
 
 }
 

@@ -19,6 +19,17 @@ BEGIN {
             required => 1,
         );
 
+        has line => (
+            is       => 'ro',
+            lazy    => 1,
+            builder => sub {
+                my $self = shift;
+
+                my $lines = grep { $_ eq "\n" } (split(//, substr($self->source, 0, $self->start)));
+                return $lines;
+            },
+        );
+
         has content => (
             is      => 'ro',
             lazy    => 1,
@@ -44,6 +55,14 @@ BEGIN {
         sub type  { 'EscapedChar' }
         sub match { [ qr/\G(\\\\|\\\`|\\\*|\\\_|\\\{|\\\}|\\\[|\\\]|\\\(|\\\)|\\\#|\\\+|\\\-|\\\.|\\\!)/ ] }
 
+        # Delete the first \
+        around content => sub {
+            my $orig = shift;
+            my $value = $orig->(@_);
+
+            return substr($value,1);
+        };
+
         1;
     }
     {
@@ -52,7 +71,10 @@ BEGIN {
         extends 'Markdown::Compiler::Lexer::Token';
 
         sub type  { 'CodeBlock' }
-        sub match { [ qr|\G\`\`\`\n|, qr|\G\`\`\`[ ]*\S+[ ]*\n| ] }
+        sub match {[
+            qr|\G\`\`\`(?:\n\|$)|,
+            qr|\G\`\`\`[ ]*\S+[ ]*\n|,
+        ]}
 
 
 
@@ -89,7 +111,11 @@ BEGIN {
         use Regexp::Common qw( URI );
 
         sub type  { 'Image' }
-        sub match { [ qr/\G!\[(.*)\]\(($RE{URI}{HTTP})\s+"([^"]+)"\s*\)/, qr/\G!\[(.*)\]\(($RE{URI}{HTTP}\s*)\)/ ] }
+        sub match {[
+            qr/\G\!\[(.*)\]\(($RE{URI}{HTTP})\s+"([^"]+)"\s*\)/,
+            qr/\G\!\[(.*)\]\(($RE{URI}{HTTP}\s*)\)/,
+            qr/\G\!($RE{URI}{HTTP})/,
+        ]}
 
         has text => (
             is      => 'ro',
@@ -117,16 +143,22 @@ BEGIN {
 
                 if ( $content =~ /!\[(.*)\]\(($RE{URI}{HTTP})\s+"([^"]+)"\s*\)/ ) {
                     return {
-                        title => $1,
+                        text  => $1,
                         href  => $2,
-                        text  => $3,
+                        title => $3,
                     }
                 } elsif ( $content =~ /!\[(.*)\]\(($RE{URI}{HTTP}\s*)\)/ ) {
                     return {
-                        title => $1,
+                        text  => $1,
                         href  => $2,
-                        text  => undef,
+                        title => undef,
                     }
+                } elsif ( $content =~ /!($RE{URI}{HTTP})/ ) {
+                    return {
+                        text  => undef,
+                        href  => $1,
+                        title => undef,
+                    };
                 }
             }
         );
@@ -423,6 +455,23 @@ has tokens => (
     builder  => '_build_tokens',
     init_arg => undef,
 
+);
+
+has token_table => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => sub {
+        my ( $self ) = @_;
+
+        my $str;
+
+        foreach my $token ( @{$self->tokens} ) {
+            ( my $content = $token->content  ) =~ s/\n//g;
+            $str .= sprintf( "%20s | %s\n", $content, $token->type );
+        }
+
+        return $str;
+    }
 );
 
 has hooks => (
