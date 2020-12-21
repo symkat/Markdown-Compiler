@@ -1,3 +1,4 @@
+# ABSTRACT: Perl Markdown Compiler
 package Markdown::Compiler;
 use Moo;
 use Markdown::Compiler::Lexer;
