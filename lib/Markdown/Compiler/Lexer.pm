@@ -233,7 +233,13 @@ BEGIN {
         extends 'Markdown::Compiler::Lexer::Token';
 
         sub type  { 'Item' }
-        sub match { [ qr/\G(?:(?<=^)|(?<=\n))(?:\*|\+|\-) / ] }
+        sub match { [
+            # Unordered / Beginning of line, then * + or -
+            qr/\G(?:(?<=^)|(?<=\n))(?:\*|\+|\-) /,
+
+            # Numbered / Beginning of line, [number].[space]
+            qr/\G(?:(?<=^)|(?<=\n))\d+\.\s+/,
+        ]}
 
         # Note: I have the following version of this I should solve why I did this:
         # $str =~ /\G(?:(?=^)|(?=\n))(?:\*|\+|\-) /gc or ( exists $tokens[-1] and $tokens[-1]->{type} eq 'line_break' and $str =~ /\G(?:\*|\+|\-) /gc
