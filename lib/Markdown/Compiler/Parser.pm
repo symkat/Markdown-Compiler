@@ -687,6 +687,9 @@ sub _parse_list {
         }
         
         if ( $token->type eq 'Item' ) {
+            # TODO: Item token might be '\d+\.\s+', in which case we're handling an
+            # ordered/numbered list.  That's not handled yet, so numbered lists are
+            # treated as unordered lists.
             unshift @{$tokens}, $token;
             push @tree, Markdown::Compiler::Parser::Node::List::Unordered->new(
                 tokens   => [ ], 
