@@ -685,6 +685,13 @@ sub _parse_list {
             # Single Line Break - Ignore
             next;
         }
+        # Exit Conditions Continued:
+        #
+        #    - Tokens which are invalid in this context, put the token back and return our @ree
+        if ( grep { $token->type eq $_ } (qw(TableStart CodeBlock BlockQuote List HR Header)) ) {
+            unshift @$tokens, $token;
+            return @tree;
+        }
         
         if ( $token->type eq 'Item' ) {
             # TODO: Item token might be '\d+\.\s+', in which case we're handling an
