@@ -175,13 +175,17 @@ BEGIN {
         use Regexp::Common qw( URI );
 
         # Regexp::Common::URI doesn't support fragments, I should make a patch for it.
-        my $url_match = qr/$RE{URI}{HTTP}{ -scheme => 'https?' }(?:\#[A-z0-9-_]+)?/;
+        my $url_match = qr/$RE{URI}{HTTP}{ -scheme => 'https?' }(?:#[A-z0-9-_]+)?(?=[ )])/;
 
         sub type  { 'Link' }
+            # qr/\G\[.*\]\($url_match\s+"([^"]+)"\s*\)/,
+            # qr/\G\[.*\]\($url_match\)/,
+            # qr/\G$url_match/,
         sub match {[ 
-            qr/\G\[.*\]\($url_match\s+"([^"]+)"\s*\)/,
-            qr/\G\[.*\]\($url_match\s*\)/,
+            qr/\G\[.*?\]\($url_match\s+"([^"]+)"\s*\)/,
+            qr/\G\[.*?\]\($url_match\)/,
             qr/\G$url_match/,
+            qr/\G$RE{URI}{HTTP}{ -scheme => 'https?' }/,
         ]}
 
         has text => (
@@ -221,6 +225,12 @@ BEGIN {
                         title => undef,
                     };
                 } elsif ( $content =~ /($url_match)/ ) {
+                    return {
+                        text  => undef,
+                        href  => $1,
+                        title => undef,
+                    };
+                } elsif ( $content =~ /($RE{URI}{HTTP}{ -scheme => 'https?' })/ ) {
                     return {
                         text  => undef,
                         href  => $1,
@@ -536,9 +546,12 @@ has lexer_tokens => (
             Markdown::Compiler::Lexer::Token::BoldItalicMaker
             Markdown::Compiler::Lexer::Token::LineBreak
             Markdown::Compiler::Lexer::Token::Space
-            Markdown::Compiler::Lexer::Token::Word
+
             Markdown::Compiler::Lexer::Token::Char
         )];
+    # Removed from betweenb Space and Char, might have been
+    # more trouble than it's worth.
+    # Markdown::Compiler::Lexer::Token::Word
     }
 );
 

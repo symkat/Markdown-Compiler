@@ -26,4 +26,22 @@ build_and_test( "Link with anchor text.",
     [ result_is => "<p><a href=\"http://example.net/index.html#hello\">This link</a> has no title attribute.</p>\n\n" ],
 ]);
 
+build_and_test( "This took a while...",
+    'First, check out the [DBIx::Class::Schema::Config Documentation](https://github.com/symkat/DBIx-Class-Schema-Config' .
+    '/blob/master/README.pod).  Questions like "[how do I change where it looks for configuration files?](https://metacp' .
+    'an.org/module/DBIx::Class::Schema::Config#CHANGE-CONFIG-PATH)," and "[can I make programatic changes to the credent' .
+    'ials before they\'re loaded?](https://metacpan.org/module/DBIx::Class::Schema::Config#filter_loaded_credentials)," ' .
+    'are answered.', [ 
+        [ result_is => '<p>First, check out the <a href="https://github.com/symkat/DBIx-Class-Schema-Config/blob/master/' .
+            'README.pod">DBIx::Class::Schema::Config Documentation</a>.  Questions like "<a href="https://metacpan.org/m' .
+            'odule/DBIx::Class::Schema::Config#CHANGE-CONFIG-PATH">how do I change where it looks for configuration file' .
+            's?</a>," and "<a href="https://metacpan.org/module/DBIx::Class::Schema::Config#filter_loaded_credentials">c' .
+            'an I make programatic changes to the credentials before they\'re loaded?</a>," are answered.</p>' . "\n\n"
+        ],
+    ]
+
+);
+
+
+
 done_testing;

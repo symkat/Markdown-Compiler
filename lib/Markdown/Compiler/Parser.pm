@@ -732,7 +732,7 @@ sub _parse_list_unordered {
             # Case: This is the ordering level for this invocation, stay in this list.
             if ( $token->length == $lvl ) {
                 $token = shift @{$tokens};
-                if ( $token->type eq 'Word' ) { # Golden, correct stay-in-list level
+                if ( $token->type eq 'Char' ) { # Golden, correct stay-in-list level
                     $token = shift @{$tokens}
                         if $tokens->[0]->type eq 'Space'; # The space before the Item
                     push @tree, Markdown::Compiler::Parser::Node::List::Unordered::Item->new(
@@ -802,7 +802,7 @@ sub _parse_list {
         # Exit Conditions Continued:
         #
         #    - Tokens which are invalid in this context, put the token back and return our @ree
-        if ( grep { $token->type eq $_ } (qw(Word TableStart CodeBlock BlockQuote List HR Header)) ) {
+        if ( grep { $token->type eq $_ } (qw(Char Word TableStart CodeBlock BlockQuote List HR Header)) ) {
             unshift @$tokens, $token;
             return @tree;
         }
