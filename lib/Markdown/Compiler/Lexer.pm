@@ -112,9 +112,9 @@ BEGIN {
 
         sub type  { 'Image' }
         sub match {[
-            qr/\G\!\[(.*)\]\(($RE{URI}{HTTP})\s+"([^"]+)"\s*\)/,
-            qr/\G\!\[(.*)\]\(($RE{URI}{HTTP}\s*)\)/,
-            qr/\G\!($RE{URI}{HTTP})/,
+            qr/\G\!\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' })\s+"([^"]+)"\s*\)/,
+            qr/\G\!\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' }\s*)\)/,
+            qr/\G\!($RE{URI}{HTTP}{ -scheme => 'https?' })/,
         ]}
 
         has text => (
@@ -141,19 +141,19 @@ BEGIN {
             builder => sub {
                 my $content = shift->content;
 
-                if ( $content =~ /!\[(.*)\]\(($RE{URI}{HTTP})\s+"([^"]+)"\s*\)/ ) {
+                if ( $content =~ /!\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' })\s+"([^"]+)"\s*\)/ ) {
                     return {
                         text  => $1,
                         href  => $2,
                         title => $3,
                     }
-                } elsif ( $content =~ /!\[(.*)\]\(($RE{URI}{HTTP}\s*)\)/ ) {
+                } elsif ( $content =~ /!\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' }\s*)\)/ ) {
                     return {
                         text  => $1,
                         href  => $2,
                         title => undef,
                     }
-                } elsif ( $content =~ /!($RE{URI}{HTTP})/ ) {
+                } elsif ( $content =~ /!($RE{URI}{HTTP}{ -scheme => 'https?' })/ ) {
                     return {
                         text  => undef,
                         href  => $1,
@@ -173,9 +173,9 @@ BEGIN {
 
         sub type  { 'Link' }
         sub match {[ 
-            qr/\G\[(.*)\]\(($RE{URI}{HTTP})\s+"([^"]+)"\s*\)/,
-            qr/\G\[(.*)\]\(($RE{URI}{HTTP}\s*)\)/,
-            qr/\G($RE{URI}{HTTP})/,
+            qr/\G\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' })\s+"([^"]+)"\s*\)/,
+            qr/\G\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' }\s*)\)/,
+            qr/\G($RE{URI}{HTTP}{ -scheme => 'https?' })/,
         ]}
 
         has text => (
@@ -202,19 +202,19 @@ BEGIN {
             builder => sub {
                 my $content = shift->content;
 
-                if ( $content =~ /\[(.*)\]\(($RE{URI}{HTTP})\s+"([^"]+)"\s*\)/ ) {
+                if ( $content =~ /\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' })\s+"([^"]+)"\s*\)/ ) {
                     return {
                         text  => $1,
                         href  => $2,
                         title => $3,
                     };
-                } elsif ( $content =~ /\[(.*)\]\(($RE{URI}{HTTP}\s*)\)/ ) {
+                } elsif ( $content =~ /\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' }\s*)\)/ ) {
                     return {
                         text  => $1,
                         href  => $2,
                         title => undef,
                     };
-                } elsif ( $content =~ /($RE{URI}{HTTP})/ ) {
+                } elsif ( $content =~ /($RE{URI}{HTTP}{ -scheme => 'https?' })/ ) {
                     return {
                         text  => undef,
                         href  => $1,
@@ -460,7 +460,7 @@ BEGIN {
         # I'm not really sure why I have this... I should have documented this,
         # but 8 years ago I thought this was a good idea.
         sub type  { 'Word' }
-        sub match { [ qr/\G(.+?)(?=\\|\*|\#|_|$RE{URI}{HTTP}|\n|\s)/ ] }
+        sub match { [ qr/\G(.+?)(?=\\|\*|\#|_|$RE{URI}{HTTP}{ -scheme => 'https?' }|\n|\s)/ ] }
 
         1;
     }
