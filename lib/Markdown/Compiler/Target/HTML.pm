@@ -23,6 +23,8 @@ has functions => (
     lazy => 1,
     default => sub {
         return +{
+            'Markdown::Compiler::Parser::Node::Metadata'               => 'noop',
+
             'Markdown::Compiler::Parser::Node::Header'                 => 'header', 
 
             'Markdown::Compiler::Parser::Node::HR'                     => 'hr',
@@ -77,12 +79,16 @@ sub _compile {
             if ( my $code = $self->can($self->functions->{ref($node)}) ) {
                 $str .= $code->($self, $node);
                 next;
+            } else {
+                die "Error no handler found for token type " . ref($node) . "\n";
             }
 
         }
     }
     return $str;
 }
+
+sub noop { "" }
 
 sub header {
     my ( $self, $node, $content ) = @_;

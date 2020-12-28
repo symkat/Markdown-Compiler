@@ -598,15 +598,13 @@ sub _parse_list_unordered {
     my @tree;
 
     while ( defined ( my $token = shift @{ $tokens } ) ) {
-        # warn "Looking at token... " . $token->type . "\n";
         # Exit Conditions.
+        #
+        # If we hit any linebreak we go back to _parse_list to handle it.
         if ( $token->type eq 'LineBreak' ) {
-            if ( exists $tokens->[0] and $tokens->[0]->type eq 'LineBreak' ) {
-                # Double Line Break, Bail Out
-                return @tree;
-            }
-            # Single Line Break - Ignore
-            next;
+            unshift @{$tokens}, $token;
+            return @tree;
+
         }
 
         # Handle the next item ( root level )
@@ -685,6 +683,7 @@ sub _parse_list {
         if ( $token->type eq 'LineBreak' ) {
             if ( exists $tokens->[0] and $tokens->[0]->type eq 'LineBreak' ) {
                 # Double Line Break, Bail Out
+                warn "See the bail out condition.... in _parse_list\n";
                 return @tree;
             }
             # Single Line Break - Ignore
@@ -693,7 +692,7 @@ sub _parse_list {
         # Exit Conditions Continued:
         #
         #    - Tokens which are invalid in this context, put the token back and return our @ree
-        if ( grep { $token->type eq $_ } (qw(TableStart CodeBlock BlockQuote List HR Header)) ) {
+        if ( grep { $token->type eq $_ } (qw(Word TableStart CodeBlock BlockQuote List HR Header)) ) {
             unshift @$tokens, $token;
             return @tree;
         }
