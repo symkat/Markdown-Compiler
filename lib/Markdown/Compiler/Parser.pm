@@ -147,7 +147,23 @@ BEGIN {
     }
 
     {
+        package Markdown::Compiler::Parser::Node::List::Ordered;
+        use Moo;
+        extends 'Markdown::Compiler::Parser::Node';
+
+        1;
+    }
+
+    {
         package Markdown::Compiler::Parser::Node::List::Unordered;
+        use Moo;
+        extends 'Markdown::Compiler::Parser::Node';
+
+        1;
+    }
+
+    {
+        package Markdown::Compiler::Parser::Node::List::Ordered::Item;
         use Moo;
         extends 'Markdown::Compiler::Parser::Node';
 
@@ -592,6 +608,92 @@ sub _parse_list_item {
     return @tree;
 }
 
+sub _parse_list_ordered {
+    my ( $self, $lvl, $tokens ) = @_;
+
+    my @tree;
+
+    while ( defined ( my $token = shift @{ $tokens } ) ) {
+        # Exit Conditions.
+        #
+        # If we hit any linebreak we go back to _parse_list to handle it.
+        if ( $token->type eq 'LineBreak' ) {
+            unshift @{$tokens}, $token;
+            return @tree;
+
+        }
+
+        # Handle the next item ( root level )
+        elsif ( $lvl == 0 and $token->type eq 'Item' ) {
+            push @tree, Markdown::Compiler::Parser::Node::List::Ordered::Item->new(
+                tokens => [ $token ],
+                children => [ $self->_parse_list_item( $tokens ) ],
+            );
+            next;
+        }
+
+        # Transitioning from level 1 to 0 doesn't use the space method below,
+        # it uses this one here.
+        elsif ( $token->type eq 'Item' ) {
+            # Put the space/item token back, return our tree.
+            unshift @{$tokens}, $token;
+            return @tree;
+        }
+
+        # Handle Space
+        elsif ( $token->type eq 'Space' ) {
+            # warn "After this space token is a " . $tokens->[0]->type . " with " . $tokens->[0]->content . " content\n";
+            # Case: This is the ordering level for this invocation, stay in this list.
+            if ( $token->length == $lvl ) {
+                $token = shift @{$tokens};
+                if ( $token->type eq 'Word' ) { # Golden, correct stay-in-list level
+                    $token = shift @{$tokens}
+                        if $tokens->[0]->type eq 'Space'; # The space before the Item
+                    push @tree, Markdown::Compiler::Parser::Node::List::Ordered::Item->new(
+                        tokens => [ $token ],
+                        children => [ $self->_parse_list_item( $tokens ) ],
+                    );
+                    next;
+                }
+                die "Error: It shouldn't have gotten here, we're fucked";
+            }
+
+            # Case: This list is now complete, the next request was for the next parent item.
+            elsif ( $token->length < $lvl or $token->type eq 'Item' ) {
+                # Put the space/item token back, return our tree.
+                unshift @{$tokens}, $token;
+                return @tree;
+            }
+
+
+            # Case: This is a new list, existing under the last Item
+            elsif ( $token->length > $lvl ) {
+                if ( $token->content =~ /^\d+\.\s+$/ ) {
+                    unshift @{$tokens}, $token;
+                    push @tree, Markdown::Compiler::Parser::Node::List::Ordered->new(
+                        tokens   => [ ],
+                        children => [ $self->_parse_list_ordered( $token->length, $tokens ) ]
+                    );
+                    next;
+                } else {
+                    unshift @{$tokens}, $token;
+                    push @tree, Markdown::Compiler::Parser::Node::List::Unordered->new(
+                        tokens   => [ ],
+                        children => [ $self->_parse_list_unordered( $token->length, $tokens ) ]
+                    );
+                    next;
+                }
+            }
+
+            else {
+                die "Parser::_parse_list_unordered() could not handle token " . $token->type;
+            }
+
+        }
+    }
+    return @tree;
+}
+
 sub _parse_list_unordered {
     my ( $self, $lvl, $tokens ) = @_;
 
@@ -649,15 +751,23 @@ sub _parse_list_unordered {
                 return @tree;
             }
 
-
             # Case: This is a new list, existing under the last Item
             elsif ( $token->length > $lvl ) {
-                unshift @{$tokens}, $token;
-                push @tree, Markdown::Compiler::Parser::Node::List::Unordered->new(
-                    tokens   => [ ],
-                    children => [ $self->_parse_list_unordered( $token->length, $tokens ) ]
-                );
-                next;
+                if ( $token->content =~ /^\d+\.\s+$/ ) {
+                    unshift @{$tokens}, $token;
+                    push @tree, Markdown::Compiler::Parser::Node::List::Ordered->new(
+                        tokens   => [ ],
+                        children => [ $self->_parse_list_ordered( $token->length, $tokens ) ]
+                    );
+                    next;
+                } else {
+                    unshift @{$tokens}, $token;
+                    push @tree, Markdown::Compiler::Parser::Node::List::Unordered->new(
+                        tokens   => [ ],
+                        children => [ $self->_parse_list_unordered( $token->length, $tokens ) ]
+                    );
+                    next;
+                }
             }
 
 
@@ -698,15 +808,21 @@ sub _parse_list {
         }
         
         if ( $token->type eq 'Item' ) {
-            # TODO: Item token might be '\d+\.\s+', in which case we're handling an
-            # ordered/numbered list.  That's not handled yet, so numbered lists are
-            # treated as unordered lists.
-            unshift @{$tokens}, $token;
-            push @tree, Markdown::Compiler::Parser::Node::List::Unordered->new(
-                tokens   => [ ], 
-                children => [ $self->_parse_list_unordered( 0, $tokens ) ]
-            );
-            next;
+            if ( $token->content =~ /^\d+\.\s+$/ ) {
+                unshift @{$tokens}, $token;
+                push @tree, Markdown::Compiler::Parser::Node::List::Ordered->new(
+                    tokens   => [ ],
+                    children => [ $self->_parse_list_ordered( 0, $tokens ) ]
+                );
+                next;
+            } else {
+                unshift @{$tokens}, $token;
+                push @tree, Markdown::Compiler::Parser::Node::List::Unordered->new(
+                    tokens   => [ ],
+                    children => [ $self->_parse_list_unordered( 0, $tokens ) ]
+                );
+                next;
+            }
         }
         
         die "Parser::_parse_list() could not handle token " . $token->type;

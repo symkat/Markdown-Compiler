@@ -44,8 +44,10 @@ has functions => (
             'Markdown::Compiler::Parser::Node::CodeBlock'              => 'codeblock',
             'Markdown::Compiler::Parser::Node::CodeBlock::String'      => 'codeblock_string',
 
+            'Markdown::Compiler::Parser::Node::List::Ordered'          => 'ordered_list',
             'Markdown::Compiler::Parser::Node::List::Unordered'        => 'unordered_list',
             'Markdown::Compiler::Parser::Node::List::Unordered::Item'  => 'list_item',
+            'Markdown::Compiler::Parser::Node::List::Ordered::Item'    => 'list_item',
             'Markdown::Compiler::Parser::Node::List::Item::String'     => 'list_item_string',
         }
     }
@@ -192,6 +194,13 @@ sub codeblock_string {
     my ( $self, $node ) = @_;
 
     return $node->content;
+
+}
+
+sub ordered_list {
+    my ( $self, $node, $content ) = @_;
+
+    return "<ol>\n$content\n</ol>\n";
 
 }
 
