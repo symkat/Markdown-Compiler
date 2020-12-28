@@ -110,11 +110,14 @@ BEGIN {
         extends 'Markdown::Compiler::Lexer::Token';
         use Regexp::Common qw( URI );
 
+        # Regexp::Common::URI doesn't support fragments, I should make a patch for it.
+        my $url_match = qr/$RE{URI}{HTTP}{ -scheme => 'https?' }(?:\#[A-z0-9-_]+)?/;
+
         sub type  { 'Image' }
         sub match {[
-            qr/\G\!\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' })\s+"([^"]+)"\s*\)/,
-            qr/\G\!\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' }\s*)\)/,
-            qr/\G\!($RE{URI}{HTTP}{ -scheme => 'https?' })/,
+            qr/\G\!\[(.*)\]\(($url_match)\s+"([^"]+)"\s*\)/,
+            qr/\G\!\[(.*)\]\(($url_match\s*)\)/,
+            qr/\G\!($url_match)/,
         ]}
 
         has text => (
@@ -141,19 +144,19 @@ BEGIN {
             builder => sub {
                 my $content = shift->content;
 
-                if ( $content =~ /!\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' })\s+"([^"]+)"\s*\)/ ) {
+                if ( $content =~ /!\[(.*)\]\(($url_match)\s+"([^"]+)"\s*\)/ ) {
                     return {
                         text  => $1,
                         href  => $2,
                         title => $3,
                     }
-                } elsif ( $content =~ /!\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' }\s*)\)/ ) {
+                } elsif ( $content =~ /!\[(.*)\]\(($url_match\s*)\)/ ) {
                     return {
                         text  => $1,
                         href  => $2,
                         title => undef,
                     }
-                } elsif ( $content =~ /!($RE{URI}{HTTP}{ -scheme => 'https?' })/ ) {
+                } elsif ( $content =~ /!($url_match)/ ) {
                     return {
                         text  => undef,
                         href  => $1,
@@ -171,11 +174,14 @@ BEGIN {
         extends 'Markdown::Compiler::Lexer::Token';
         use Regexp::Common qw( URI );
 
+        # Regexp::Common::URI doesn't support fragments, I should make a patch for it.
+        my $url_match = qr/$RE{URI}{HTTP}{ -scheme => 'https?' }(?:\#[A-z0-9-_]+)?/;
+
         sub type  { 'Link' }
         sub match {[ 
-            qr/\G\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' })\s+"([^"]+)"\s*\)/,
-            qr/\G\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' }\s*)\)/,
-            qr/\G($RE{URI}{HTTP}{ -scheme => 'https?' })/,
+            qr/\G\[.*\]\($url_match\s+"([^"]+)"\s*\)/,
+            qr/\G\[.*\]\($url_match\s*\)/,
+            qr/\G$url_match/,
         ]}
 
         has text => (
@@ -202,19 +208,19 @@ BEGIN {
             builder => sub {
                 my $content = shift->content;
 
-                if ( $content =~ /\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' })\s+"([^"]+)"\s*\)/ ) {
+                if ( $content =~ /\[(.*)\]\(($url_match)\s+"([^"]+)"\s*\)/ ) {
                     return {
                         text  => $1,
                         href  => $2,
                         title => $3,
                     };
-                } elsif ( $content =~ /\[(.*)\]\(($RE{URI}{HTTP}{ -scheme => 'https?' }\s*)\)/ ) {
+                } elsif ( $content =~ /\[(.*)\]\(($url_match\s*)\)/ ) {
                     return {
                         text  => $1,
                         href  => $2,
                         title => undef,
                     };
-                } elsif ( $content =~ /($RE{URI}{HTTP}{ -scheme => 'https?' })/ ) {
+                } elsif ( $content =~ /($url_match)/ ) {
                     return {
                         text  => undef,
                         href  => $1,

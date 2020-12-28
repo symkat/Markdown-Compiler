@@ -21,4 +21,9 @@ build_and_test( "Link without title",
     [ result_is => "<p><a href=\"http://example.net/\">This link</a> has no title attribute.</p>\n\n" ],
 ]);
 
+build_and_test( "Link with anchor text.", 
+    "[This link](http://example.net/index.html#hello) has no title attribute.", [
+    [ result_is => "<p><a href=\"http://example.net/index.html#hello\">This link</a> has no title attribute.</p>\n\n" ],
+]);
+
 done_testing;
