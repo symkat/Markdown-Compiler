@@ -24,6 +24,10 @@ BEGIN {
         use Moo;
         extends 'Markdown::Compiler::Parser::Node';
 
+        has title => (
+            is => 'ro',
+        );
+
         has size => (
             is => 'ro',
         );
@@ -243,6 +247,7 @@ sub _parse {
         if ( $token->type eq 'Header' ) {
             push @tree, Markdown::Compiler::Parser::Node::Header->new(
                 size    => $token->size,
+                title   => $token->title,
                 tokens  => [ $token ],
                 content => $token->content,
             );

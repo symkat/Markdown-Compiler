@@ -298,8 +298,30 @@ BEGIN {
         has size => (
             is      => 'ro',
             lazy    => 1,
-            default => sub { length(shift->content) },
+            default => sub { length(shift->data->{header}) },
         );
+
+        has title => (
+            is      => 'ro',
+            lazy    => 1,
+            default => sub { shift->data->{title} },
+        );
+
+        has data => (
+            is      => 'ro',
+            lazy    => 1,
+            builder => sub {
+                my $content = shift->content;
+
+                if ( $content =~ /^([\#]+)\s+(.+?)$/ ) {
+                    return {
+                        header => $1,
+                        title  => $2,
+                    };
+                }
+            },
+        );
+
 
         1;
     }
