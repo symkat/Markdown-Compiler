@@ -186,8 +186,8 @@ sub codeblock {
     my ( $self, $node, $content ) = @_;
 
     return $node->language
-        ? "<pre language=\"" . $node->language . "\">\n$content</pre>\n\n"
-        : "<pre>\n$content</pre>\n\n"
+        ? "<pre><code class=\"" . $node->language . "\">\n$content\n</code></pre>\n\n"
+        : "<pre><code class=\"plaintext\">\n$content\n</code></pre>\n\n"
 }
 
 sub codeblock_string {
