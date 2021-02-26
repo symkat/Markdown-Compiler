@@ -30,6 +30,7 @@ has functions => (
             'Markdown::Compiler::Parser::Node::HR'                     => 'hr',
 
             'Markdown::Compiler::Parser::Node::Paragraph'              => 'paragraph',
+            'Markdown::Compiler::Parser::Node::Paragraph::InlineCode'  => 'paragraph_inlinecode',
             'Markdown::Compiler::Parser::Node::Paragraph::BoldItalic'  => 'paragraph_bolditalic',
             'Markdown::Compiler::Parser::Node::Paragraph::Bold'        => 'paragraph_bold',
             'Markdown::Compiler::Parser::Node::Paragraph::Italic'      => 'paragraph_italic',
@@ -109,6 +110,13 @@ sub paragraph {
     my ( $self, $node, $content ) = @_;
 
     return "<p>$content</p>\n\n";
+
+}
+
+sub paragraph_inlinecode {
+    my ( $self, $node, $content ) = @_;
+
+    return '<span class="inline-code">' . $content . '</span>';
 
 }
 

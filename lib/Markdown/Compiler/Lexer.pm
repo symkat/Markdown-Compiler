@@ -343,6 +343,17 @@ BEGIN {
     }
 
     {
+        package Markdown::Compiler::Lexer::Token::InlineCode;
+        use Moo;
+        extends 'Markdown::Compiler::Lexer::Token';
+
+        sub type  { 'InlineCode' }
+        sub match { [ qr/\G`/ ] }
+
+        1;
+    }
+
+    {
         package Markdown::Compiler::Lexer::Token::Bold;
         use Moo;
         extends 'Markdown::Compiler::Lexer::Token';
@@ -541,6 +552,7 @@ has lexer_tokens => (
             Markdown::Compiler::Lexer::Token::Item
             Markdown::Compiler::Lexer::Token::TableStart
             Markdown::Compiler::Lexer::Token::TableHeaderSep
+            Markdown::Compiler::Lexer::Token::InlineCode
             Markdown::Compiler::Lexer::Token::BlockQuote
             Markdown::Compiler::Lexer::Token::Header
             Markdown::Compiler::Lexer::Token::BoldItalicMaker

@@ -52,6 +52,14 @@ BEGIN {
     }
 
     {
+        package Markdown::Compiler::Parser::Node::Paragraph::InlineCode;
+        use Moo;
+        extends 'Markdown::Compiler::Parser::Node';
+
+        1;
+    }
+
+    {
         package Markdown::Compiler::Parser::Node::Paragraph::BoldItalic;
         use Moo;
         extends 'Markdown::Compiler::Parser::Node';
@@ -405,6 +413,35 @@ sub _parse_paragraph {
                 title   => $token->title,
                 href    => $token->href,
                 tokens  => [ $token ],
+            );
+            next;
+        }
+
+        if ( $token->type eq 'InlineCode' ) {
+            my @todo;
+
+            # Eat tokens until the next Bold block, these tokens will be recursively processed.
+            while ( defined ( my $todo_token = shift @{ $tokens } ) ) {
+                last if $todo_token->type eq 'InlineCode';
+
+                # Don't cross linebreak boundries
+                if ( $todo_token->type eq 'LineBreak' ) {
+                    unshift @{$tokens}, $todo_token;
+                    last;
+                }
+
+                push @todo, $todo_token;
+            }
+
+            # Handle the children as plain strings.
+            push @tree, Markdown::Compiler::Parser::Node::Paragraph::InlineCode->new(
+                content => $token->content,
+                tokens  => [ $token ],
+                children => [ map { 
+                    Markdown::Compiler::Parser::Node::Paragraph::String->new(
+                        content => $_->content, tokens  => [ $_ ] )
+                    } @todo
+                ],
             );
             next;
         }
