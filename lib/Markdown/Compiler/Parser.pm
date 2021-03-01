@@ -126,7 +126,15 @@ BEGIN {
     }
 
     {
-        package Markdown::Compiler::Parser::Node::Blockquote;
+        package Markdown::Compiler::Parser::Node::BlockQuote;
+        use Moo;
+        extends 'Markdown::Compiler::Parser::Node';
+
+        1;
+    }
+
+    {
+        package Markdown::Compiler::Parser::Node::BlockQuote::String;
         use Moo;
         extends 'Markdown::Compiler::Parser::Node';
 
@@ -320,8 +328,8 @@ sub _parse {
         }
         
         # Blockquotes
-        elsif ( $token->type eq 'Blockquote' ) {
-            push @tree, Markdown::Compiler::Parser::Node::Blockquote->new(
+        elsif ( $token->type eq 'BlockQuote' ) {
+            push @tree, Markdown::Compiler::Parser::Node::BlockQuote->new(
                 tokens   => [ $token ],
                 children => [ $self->_parse_blockquote( $tokens ) ],
             );
@@ -558,28 +566,74 @@ sub _parse_table {
 sub _parse_blockquote {
     my ( $self, $tokens ) = @_;
 
-        # Token Types:
-        # package Markdown::Compiler::Lexer;
-        # package Markdown::Compiler::Lexer::Token;
-        # package Markdown::Compiler::Lexer::Token::EscapedChar;
-        # package Markdown::Compiler::Lexer::Token::CodeBlock;
-        # package Markdown::Compiler::Lexer::Token::HR;
-        # package Markdown::Compiler::Lexer::Token::Image;
-        # package Markdown::Compiler::Lexer::Token::Link;
-        # package Markdown::Compiler::Lexer::Token::Item;
-        # package Markdown::Compiler::Lexer::Token::TableStart;
-        # package Markdown::Compiler::Lexer::Token::TableHeaderSep;
-        # package Markdown::Compiler::Lexer::Token::BlockQuote;
-        # package Markdown::Compiler::Lexer::Token::Header;
-        # package Markdown::Compiler::Lexer::Token::Bold;
-        # package Markdown::Compiler::Lexer::Token::Italic;
-        # package Markdown::Compiler::Lexer::Token::BoldItalic;
-        # package Markdown::Compiler::Lexer::Token::BoldItalicMaker;
-        # package Markdown::Compiler::Lexer::Token::LineBreak;
-        # package Markdown::Compiler::Lexer::Token::Space;
-        # package Markdown::Compiler::Lexer::Token::Word;
-        # package Markdown::Compiler::Lexer::Token::Char;
+    my @tree;
+
+    while ( defined ( my $token = shift @{ $tokens } ) ) {
+        # Exit Conditions:
+        #
+        #   - Line break and no more tokens (after while loop)
+        #   - Line break, and another line break.
+        if ( $token->type eq 'LineBreak' ) {
+            return @tree unless @$tokens;
+            return @tree if $tokens->[0]->type eq 'LineBreak';
+        }
+
+        next if $token->type eq 'BlockQuote';
+
+        push @tree, Markdown::Compiler::Parser::Node::BlockQuote::String->new(
+            content => $token->content,
+            tokens  => [ $token ],
+        );
+    }
+    return @tree;
 }
+
+#sub _parse_blockquote {
+#    my ( $self, $tokens ) = @_;
+
+#    my @tree;
+
+#    while ( defined ( my $token = shift @{ $tokens } ) ) {
+#        # Exit Conditions:
+#        #
+#        #   - Line break, followed by another line break.
+#        if ( $token->type eq 'LineBreak' and $tokens->[0] and $tokens->[0] eq 'LineBreak' ) {
+#            return @tree;
+#        }
+
+#        if ( $token->type eq 'BlockQuote' ) {
+#            next; # Ignore new blockquote characters.
+#        }
+
+#        push @tree, Markdown::Compiler::Parser::Node::BlockQuote::String->new(
+#            content => $token->content,
+#            tokens  => [ $token ],
+#        );
+#    }
+#    return @tree;
+
+#        # Token Types:
+#        # package Markdown::Compiler::Lexer;
+#        # package Markdown::Compiler::Lexer::Token;
+#        # package Markdown::Compiler::Lexer::Token::EscapedChar;
+#        # package Markdown::Compiler::Lexer::Token::CodeBlock;
+#        # package Markdown::Compiler::Lexer::Token::HR;
+#        # package Markdown::Compiler::Lexer::Token::Image;
+#        # package Markdown::Compiler::Lexer::Token::Link;
+#        # package Markdown::Compiler::Lexer::Token::Item;
+#        # package Markdown::Compiler::Lexer::Token::TableStart;
+#        # package Markdown::Compiler::Lexer::Token::TableHeaderSep;
+#        # package Markdown::Compiler::Lexer::Token::BlockQuote;
+#        # package Markdown::Compiler::Lexer::Token::Header;
+#        # package Markdown::Compiler::Lexer::Token::Bold;
+#        # package Markdown::Compiler::Lexer::Token::Italic;
+#        # package Markdown::Compiler::Lexer::Token::BoldItalic;
+#        # package Markdown::Compiler::Lexer::Token::BoldItalicMaker;
+#        # package Markdown::Compiler::Lexer::Token::LineBreak;
+#        # package Markdown::Compiler::Lexer::Token::Space;
+#        # package Markdown::Compiler::Lexer::Token::Word;
+#        # package Markdown::Compiler::Lexer::Token::Char;
+#}
 
 sub _parse_codeblock {
     my ( $self, $tokens ) = @_;

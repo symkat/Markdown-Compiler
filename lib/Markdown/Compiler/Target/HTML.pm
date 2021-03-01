@@ -40,7 +40,8 @@ has functions => (
 
             'Markdown::Compiler::Parser::Node::Table'                  => 'table',
 
-            'Markdown::Compiler::Parser::Node::Blockquote'             => 'blockquote',
+            'Markdown::Compiler::Parser::Node::BlockQuote'             => 'blockquote',
+            'Markdown::Compiler::Parser::Node::BlockQuote::String'     => 'blockquote_string',
 
             'Markdown::Compiler::Parser::Node::CodeBlock'              => 'codeblock',
             'Markdown::Compiler::Parser::Node::CodeBlock::String'      => 'codeblock_string',
@@ -103,7 +104,7 @@ sub header {
 }
 
 sub hr {
-
+    return "<hr />";
 }
 
 sub paragraph {
@@ -187,7 +188,15 @@ sub table {
 }
 
 sub blockquote {
+    my ( $self, $node, $content ) = @_;
 
+    return "<blockquote>$content</blockquote>\n\n";
+}
+
+sub blockquote_string {
+    my ( $self, $node ) = @_;
+
+    return $node->content || "";
 }
 
 sub codeblock {
