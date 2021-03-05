@@ -287,7 +287,7 @@ sub _parse {
         }
 
         # Paragraphs
-        elsif ( grep { $token->type eq $_ } ( qw( EscapedChar Image Link Word Char Bold Italic BoldItalic ) ) ) {
+        elsif ( grep { $token->type eq $_ } ( qw( EscapedChar Image Link Word Char Bold Italic BoldItalic InlineCode ) ) ) {
             unshift @{$tokens}, $token; # Put the token back and go to paragraph context.
             push @tree, Markdown::Compiler::Parser::Node::Paragraph->new(
                 tokens   => [ $token ],
