@@ -39,6 +39,8 @@ has functions => (
             'Markdown::Compiler::Parser::Node::Paragraph::Image'       => 'paragraph_image',
 
             'Markdown::Compiler::Parser::Node::Table'                  => 'table',
+            'Markdown::Compiler::Parser::Node::Table::Row'             => 'table_row',
+            'Markdown::Compiler::Parser::Node::Table::Cell'            => 'table_cell',
 
             'Markdown::Compiler::Parser::Node::BlockQuote'             => 'blockquote',
             'Markdown::Compiler::Parser::Node::BlockQuote::String'     => 'blockquote_string',
@@ -183,8 +185,23 @@ sub paragraph_image {
     }
 }
 
-sub table {
+sub table_cell {
+    my ( $self, $node, $content ) = @_;
+    
+    return sprintf( "<td>%s%s</td>\n", $node->content, $content );
 
+}
+
+sub table_row {
+    my ( $self, $node, $content ) = @_;
+    
+    return "<tr>\n$content</tr>\n";
+}
+
+sub table {
+    my ( $self, $node, $content ) = @_;
+
+    return "<table>\n$content</table>\n\n";
 }
 
 sub blockquote {

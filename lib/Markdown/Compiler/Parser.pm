@@ -126,6 +126,22 @@ BEGIN {
     }
 
     {
+        package Markdown::Compiler::Parser::Node::Table::Row;
+        use Moo;
+        extends 'Markdown::Compiler::Parser::Node';
+
+        1;
+    }
+
+    {
+        package Markdown::Compiler::Parser::Node::Table::Cell;
+        use Moo;
+        extends 'Markdown::Compiler::Parser::Node';
+
+        1;
+    }
+
+    {
         package Markdown::Compiler::Parser::Node::BlockQuote;
         use Moo;
         extends 'Markdown::Compiler::Parser::Node';
@@ -320,6 +336,7 @@ sub _parse {
 
         # Tables
         elsif ( $token->type eq 'TableStart' ) {
+            unshift @{$tokens}, $token; # Put the token back and go to table context.
             push @tree, Markdown::Compiler::Parser::Node::Table->new(
                 tokens   => [ $token ],
                 children => [ $self->_parse_table( $tokens ) ],
@@ -537,7 +554,77 @@ sub _parse_paragraph {
     return @tree;
 }
 
+sub _parse_table_row {
+    my ( $self, $tokens ) = @_;
+    
+    my @tree;
+
+    # We must eat from here to 
+    while ( my $token = shift @{ $tokens } ) {
+        last if $token->type eq 'LineBreak';
+
+        my @todo;
+        # Eat all of the tokens from here until the next |
+        while ( defined ( my $todo_token = shift @{ $tokens } ) ) {
+            last if $todo_token->type eq 'Char' and $todo_token->content eq '|';
+            last if $todo_token->type eq 'LineBreak';
+            push @todo, $todo_token;
+        }
+        push @tree, Markdown::Compiler::Parser::Node::Table::Cell->new(
+            content => $token->content,
+            tokens  => [ $token ],
+            children => [ $self->_parse_paragraph( \@todo ) ],
+        );
+        next;
+    }
+
+    return @tree;
+}
+
 sub _parse_table {
+    my ( $self, $tokens ) = @_;
+    
+    my @tree;
+
+    while ( defined ( my $token = shift @{ $tokens } ) ) {
+        # Exit Conditions:
+        #
+        #   - Line break and no more tokens (after while loop)
+        #   - Line break, and another line break.
+        if ( $token->type eq 'LineBreak' ) {
+            return @tree unless @$tokens;
+            return @tree if $tokens->[0]->type eq 'LineBreak';
+        }
+
+        if ( $token->type eq 'TableStart' ) {
+            my @todo;
+
+            # Eat tokens until the next Italic block, these tokens will be recursively processed.
+            while ( defined ( my $todo_token = shift @{ $tokens } ) ) {
+                last if $todo_token->type eq 'TableStart';
+
+                # Don't cross linebreak boundries
+                if ( $todo_token->type eq 'LineBreak' ) {
+                    unshift @{$tokens}, $todo_token;
+                    last;
+                }
+
+                push @todo, $todo_token;
+            }
+
+            # Process the children with _parse_paragraph.
+            push @tree, Markdown::Compiler::Parser::Node::Table::Row->new(
+                content => $token->content,
+                tokens  => [ $token ],
+                children => [ $self->_parse_table_row( \@todo ) ],
+            );
+            next;
+        }
+    }
+    return @tree;
+}
+
+sub _parse_table_2 {
     my ( $self, $tokens ) = @_;
         # Token Types:
         # package Markdown::Compiler::Lexer;
