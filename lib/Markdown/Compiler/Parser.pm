@@ -730,6 +730,17 @@ sub _parse_list_item {
             return @tree;
         }
 
+        # Handle links in list
+        if ( $token->type eq 'Link' ) {
+            push @tree, Markdown::Compiler::Parser::Node::Paragraph::Link->new(
+                text    => $token->text,
+                title   => $token->title,
+                href    => $token->href,
+                tokens  => [ $token ],
+            );
+            next;
+        }
+
         push @tree, Markdown::Compiler::Parser::Node::List::Item::String->new(
             content => $token->content,
             tokens  => [ $token ],

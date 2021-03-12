@@ -42,6 +42,10 @@ build_and_test( "This took a while...",
 
 );
 
-
+build_and_test("Links in lists",
+    '* [Example](http://example.com/)', [
+        [ result_is => "<ul>\n<li><a href=\"http://example.com/\">Example</a></li>\n\n</ul>\n" ],
+    ],
+);
 
 done_testing;
