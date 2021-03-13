@@ -48,11 +48,11 @@ build_and_test("Links in lists",
     ],
 );
 
-# We'll need some more work on header parsing for this test to work
-# build_and_test("Links in headers",
-#     '# [Example](http://example.com/)', [
-#         [ result_is => "<h1><a href=\"http://example.com\">Example</a></h1>\n\n" ],
-#     ],
-# );
+#We'll need some more work on header parsing for this test to work
+build_and_test("Links in headers",
+    '# [Example](http://example.com/)', [
+        [ result_is => "<h1><a href=\"http://example.com/\">Example</a></h1>\n\n" ],
+    ],
+);
 
 done_testing;

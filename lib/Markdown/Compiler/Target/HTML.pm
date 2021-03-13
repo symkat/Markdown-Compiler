@@ -101,7 +101,7 @@ sub header {
 
     my $header = "h" . $node->size;
 
-    return "<$header>" . $node->title . "</$header>\n\n";
+    return "<$header>$content</$header>\n\n";
 
 }
 

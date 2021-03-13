@@ -294,10 +294,11 @@ sub _parse {
         # Header
         if ( $token->type eq 'Header' ) {
             push @tree, Markdown::Compiler::Parser::Node::Header->new(
-                size    => $token->size,
-                title   => $token->title,
-                tokens  => [ $token ],
-                content => $token->content,
+                size     => $token->size,
+                title    => $token->title,
+                tokens   => [ $token ],
+                content  => $token->content,
+                children => [ $self->_parse_paragraph(Markdown::Compiler->new( source => $token->title )->lexer->tokens)  ],
             );
             next;
         }
