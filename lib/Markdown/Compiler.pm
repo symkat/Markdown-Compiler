@@ -4,6 +4,7 @@ use Moo;
 use Markdown::Compiler::Lexer;
 use Markdown::Compiler::Parser;
 use Markdown::Compiler::Target::HTML;
+use Module::Runtime qw( use_module );
 
 has source => (
     is       => 'ro',
@@ -49,6 +50,13 @@ has compiler => (
         Markdown::Compiler::Target::HTML->new( tree => shift->tree );
     },
 );
+
+sub compiler_for {
+    my ( $self, $target ) = @_;
+
+    return use_module("Markdown::Compiler::Target::$target")
+        ->new( tree => $self->tree );
+}
 
 has result => (
     is      => 'ro',
