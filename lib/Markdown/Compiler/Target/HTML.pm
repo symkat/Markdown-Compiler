@@ -70,11 +70,11 @@ sub _compile {
 
     while ( defined ( my $node = shift @{ $tree } ) ) {
         # Children should be compiled first.
-        if ( $node->children and @{$node->children} >= 1 ) {
+        if ( $node->{children} and @{$node->{children}} >= 1 ) {
 
             # If this node can be compiled, then we will compile it, giving it the content
-            if ( my $code = $self->can($self->functions->{ref($node)}) ) {
-                $str .= $code->($self, $node, $self->_compile($node->children));
+            if ( my $code = $self->can($self->functions->{$node->{class}}) ) {
+                $str .= $code->($self, $node, $self->_compile(@{$node->{children}}));
                 next;
             }
             warn "This is an odd place to be.... children but the parent can't be compiled?";
@@ -82,7 +82,7 @@ sub _compile {
 
         # This node has no children to compile.
         else {
-            if ( my $code = $self->can($self->functions->{ref($node)}) ) {
+            if ( my $code = $self->can($self->functions->{$node->{class}}) ) {
                 $str .= $code->($self, $node);
                 next;
             } else {
@@ -99,7 +99,7 @@ sub noop { "" }
 sub header {
     my ( $self, $node, $content ) = @_;
 
-    my $header = "h" . $node->size;
+    my $header = "h" . $node->{size};
 
     return "<$header>$content</$header>\n\n";
 
@@ -146,23 +146,23 @@ sub paragraph_italic {
 sub paragraph_string {
     my ( $self, $node ) = @_;
 
-    return $node->content;
+    return $node->{content};
 
 }
 
 sub paragraph_link {
     my ( $self, $node ) = @_;
 
-    if ( $node->title ) {
+    if ( $node->{title} ) {
         return sprintf( '<a href="%s" title="%s">%s</a>',
-            $node->href,
-            $node->title,
-            $node->text,
+            $node->{href},
+            $node->{title},
+            $node->{text},
         );
     } else {
         return sprintf( '<a href="%s">%s</a>',
-            $node->href,
-            $node->text ? $node->text : $node->href,
+            $node->{href},
+            $node->{text} ? $node->{text} : $node->{href},
         );
     }
 
@@ -171,16 +171,16 @@ sub paragraph_link {
 sub paragraph_image {
     my ( $self, $node ) = @_;
 
-    if ( $node->title ) {
+    if ( $node->{title} ) {
         return sprintf( '<img src="%s" title="%s" alt="%s">',
-            $node->href,
-            $node->title,
-            $node->text
+            $node->{href},
+            $node->{title},
+            $node->{text}
         );
     } else {
         return sprintf( '<img src="%s" alt="%s">',
-            $node->href,
-            $node->text ? $node->text : $node->href,
+            $node->{href},
+            $node->{text} ? $node->{text} : $node->{href},
         );
     }
 }
@@ -188,7 +188,7 @@ sub paragraph_image {
 sub table_cell {
     my ( $self, $node, $content ) = @_;
     
-    return sprintf( "<td>%s%s</td>\n", $node->content, $content );
+    return sprintf( "<td>%s%s</td>\n", $node->{content}, $content );
 
 }
 
@@ -213,21 +213,21 @@ sub blockquote {
 sub blockquote_string {
     my ( $self, $node ) = @_;
 
-    return $node->content || "";
+    return $node->{content} || "";
 }
 
 sub codeblock {
     my ( $self, $node, $content ) = @_;
 
-    return $node->language
-        ? "<pre><code class=\"" . $node->language . "\">\n$content\n</code></pre>\n\n"
+    return $node->{language}
+        ? "<pre><code class=\"" . $node->{language} . "\">\n$content\n</code></pre>\n\n"
         : "<pre><code class=\"plaintext\">\n$content\n</code></pre>\n\n"
 }
 
 sub codeblock_string {
     my ( $self, $node ) = @_;
 
-    return $node->content;
+    return $node->{content};
 
 }
 
@@ -255,7 +255,7 @@ sub list_item {
 sub list_item_string {
     my ( $self, $node ) = @_;
 
-    return $node->content;
+    return $node->{content};
 }
 
 

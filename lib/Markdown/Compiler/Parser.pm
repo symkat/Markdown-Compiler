@@ -19,204 +19,6 @@ BEGIN {
 
         1;
     }
-    {
-        package Markdown::Compiler::Parser::Node::Header;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        has title => (
-            is => 'ro',
-        );
-
-        has size => (
-            is => 'ro',
-        );
-
-        1;
-    }
-    {
-        package Markdown::Compiler::Parser::Node::HR;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-    }
-    
-    {
-        package Markdown::Compiler::Parser::Node::Paragraph;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::Paragraph::InlineCode;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::Paragraph::BoldItalic;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::Paragraph::Bold;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::Paragraph::Italic;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::Paragraph::String;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-
-    }
-    
-    {
-        package Markdown::Compiler::Parser::Node::Paragraph::Link;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        has [qw( href title text )] => (
-            is => 'ro',
-        );
-
-        1;
-
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::Paragraph::Image;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node::Paragraph::Link';
-
-        1;
-
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::Table;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::Table::Row;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::Table::Cell;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::BlockQuote;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::BlockQuote::String;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::CodeBlock;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        has language => (
-            is => 'ro',
-        );
-
-        1;
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::CodeBlock::String;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::List::Ordered;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::List::Unordered;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::List::Ordered::Item;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-    }
-
-    {
-        package Markdown::Compiler::Parser::Node::List::Unordered::Item;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-    }
-    
-    {
-        package Markdown::Compiler::Parser::Node::List::Item::String;
-        use Moo;
-        extends 'Markdown::Compiler::Parser::Node';
-
-        1;
-    }
 
     {
         package Markdown::Compiler::Parser::Node::Metadata;
@@ -262,6 +64,12 @@ has tree => (
     builder => '_build_tree',
 );
 
+has htree => (
+    is      => 'ro',
+    lazy    => 1,
+    builder => '_build_htree',
+);
+
 has metadata => (
     is      => 'ro',
     lazy    => 1,
@@ -274,14 +82,45 @@ sub _build_tree {
 
     my @tokens = @{$self->stream};
 
-    return $self->_parse(\@tokens);
+    return $self->make_hash($self->_parse(\@tokens));
+}
+
+sub make_hash {
+    my ( $self, $tokens ) = @_;
+
+    my @stream;
+
+    foreach my $token ( @{$tokens} ) {
+
+        if ( ref($token) eq 'HASH' ) {
+            if ( $token->{children} && @{$token->{children}} >= 1 ) {
+                $token->{children} = [ $self->make_hash( $token->{children} ) ];
+            }
+            push @stream, $token;
+        } else {
+            push @stream, {
+                class   => ref($token),
+                tokens  => [ $token->tokens ],
+                ( $token->can('data')     && $token->data     ? ( data     => $token->data                           ) : () ),
+                ( $token->can('href')     && $token->href     ? ( href     => $token->href                           ) : () ),
+                ( $token->can('title')    && $token->title    ? ( title    => $token->title                          ) : () ),
+                ( $token->can('size')     && $token->size     ? ( size     => $token->size                           ) : () ),
+                ( $token->can('text')     && $token->text     ? ( text     => $token->text                           ) : () ),
+                ( $token->can('language') && $token->language ? ( language => $token->language                       ) : () ),
+                ( $token->can('content')  && $token->content  ? ( content  => $token->content                        ) : () ),
+                ( $token->can('children') && $token->children ? ( children => [ $self->make_hash($token->children) ] ) : () ),
+            };
+        }
+    }
+
+    return [ @stream ];
 }
 
 sub _build_metadata {
     my ( $self ) = @_;
 
-    if ( $self->tree->[0] and ref($self->tree->[0]) eq 'Markdown::Compiler::Parser::Node::Metadata' ) {
-        return $self->tree->[0]->data;
+    if ( $self->tree->[0] and $self->tree->[0]->{class} eq 'Markdown::Compiler::Parser::Node::Metadata' ) {
+        return $self->tree->[0]->{data};
     }
     return undef;
 }
@@ -293,23 +132,25 @@ sub _parse {
     while ( defined ( my $token = shift @{ $tokens } ) ) {
         # Header
         if ( $token->type eq 'Header' ) {
-            push @tree, Markdown::Compiler::Parser::Node::Header->new(
+            push @tree, {
+                class => 'Markdown::Compiler::Parser::Node::Header',
                 size     => $token->size,
                 title    => $token->title,
                 tokens   => [ $token ],
                 content  => $token->content,
                 children => [ $self->_parse_paragraph(Markdown::Compiler->new( source => $token->title )->lexer->tokens)  ],
-            );
+            };
             next;
         }
 
         # Paragraphs
         elsif ( grep { $token->type eq $_ } ( qw( EscapedChar Image Link Word Char Bold Italic BoldItalic InlineCode ) ) ) {
             unshift @{$tokens}, $token; # Put the token back and go to paragraph context.
-            push @tree, Markdown::Compiler::Parser::Node::Paragraph->new(
-                tokens   => [ $token ],
+            push @tree, {
+                class => 'Markdown::Compiler::Parser::Node::Paragraph',
                 children => [ $self->_parse_paragraph( $tokens ) ],
-            );
+            };
+
             next;
         }
         
@@ -329,38 +170,42 @@ sub _parse {
             }
 
             # Otherwise, we just have a simple HR token.
-            push @tree, Markdown::Compiler::Parser::Node::HR->new(
+            push @tree, {
+                class => 'Markdown::Compiler::Parser::Node::HR',
                 tokens   => [ $token ],
-            );
+            };
             next;
         }
 
         # Tables
         elsif ( $token->type eq 'TableStart' ) {
             unshift @{$tokens}, $token; # Put the token back and go to table context.
-            push @tree, Markdown::Compiler::Parser::Node::Table->new(
+            push @tree, {
+                class    => 'Markdown::Compiler::Parser::Node::Table',
                 tokens   => [ $token ],
                 children => [ $self->_parse_table( $tokens ) ],
-            );
+            };
             next;
         }
         
         # Blockquotes
         elsif ( $token->type eq 'BlockQuote' ) {
-            push @tree, Markdown::Compiler::Parser::Node::BlockQuote->new(
+            push @tree, { 
+                class    => 'Markdown::Compiler::Parser::Node::BlockQuote',
                 tokens   => [ $token ],
                 children => [ $self->_parse_blockquote( $tokens ) ],
-            );
+            };
             next;
         }
         
         # Code Blocks
         elsif ( $token->type eq 'CodeBlock' ) {
-            push @tree, Markdown::Compiler::Parser::Node::CodeBlock->new(
-                language => $token->language,
+            push @tree, {
+                class    => 'Markdown::Compiler::Parser::Node::CodeBlock',
+                language => $token->{language},
                 tokens   => [ $token ],
                 children => [ $self->_parse_codeblock( $tokens ) ],
-            );
+            };
             next;
         }
         
@@ -416,30 +261,33 @@ sub _parse_paragraph {
 
         # Parsing
         if ( grep { $token->type eq $_ } (qw(EscapedChar Space Word Char)) ) {
-            push @tree, Markdown::Compiler::Parser::Node::Paragraph::String->new(
+            push @tree, {
+                class   => 'Markdown::Compiler::Parser::Node::Paragraph::String',
                 content => $token->content,
                 tokens  => [ $token ],
-            );
+            };
             next;
         }
 
         if ( grep { $token->type eq $_ } (qw(Link)) ) {
-            push @tree, Markdown::Compiler::Parser::Node::Paragraph::Link->new(
+            push @tree, {
+                class   => 'Markdown::Compiler::Parser::Node::Paragraph::Link',
                 text    => $token->text,
                 title   => $token->title,
                 href    => $token->href,
                 tokens  => [ $token ],
-            );
+            };
             next;
         }
         
         if ( $token->type eq 'Image' ) {
-            push @tree, Markdown::Compiler::Parser::Node::Paragraph::Image->new(
+            push @tree, {
+                class   => 'Markdown::Compiler::Parser::Node::Paragraph::Image',
                 text    => $token->text,
                 title   => $token->title,
                 href    => $token->href,
                 tokens  => [ $token ],
-            );
+            };
             next;
         }
 
@@ -460,15 +308,18 @@ sub _parse_paragraph {
             }
 
             # Handle the children as plain strings.
-            push @tree, Markdown::Compiler::Parser::Node::Paragraph::InlineCode->new(
+            push @tree, {
+                class   => 'Markdown::Compiler::Parser::Node::Paragraph::InlineCode',
                 content => $token->content,
                 tokens  => [ $token ],
-                children => [ map { 
-                    Markdown::Compiler::Parser::Node::Paragraph::String->new(
-                        content => $_->content, tokens  => [ $_ ] )
-                    } @todo
+                children => [ 
+                    map { +{
+                        class   => 'Markdown::Compiler::Parser::Node::Paragraph::String',
+                        content => $_->content,
+                        tokens  => [ $_ ],
+                    } } @todo
                 ],
-            );
+            };
             next;
         }
         
@@ -489,11 +340,12 @@ sub _parse_paragraph {
             }
 
             # Process the children with _parse_paragraph.
-            push @tree, Markdown::Compiler::Parser::Node::Paragraph::BoldItalic->new(
-                content => $token->content,
-                tokens  => [ $token ],
+            push @tree, {
+                class    => 'Markdown::Compiler::Parser::Node::Paragraph::BoldItalic',
+                content  => $token->content,
+                tokens   => [ $token ],
                 children => [ $self->_parse_paragraph( \@todo ) ],
-            );
+            };
             next;
         }
         
@@ -514,11 +366,12 @@ sub _parse_paragraph {
             }
 
             # Process the children with _parse_paragraph.
-            push @tree, Markdown::Compiler::Parser::Node::Paragraph::Bold->new(
-                content => $token->content,
-                tokens  => [ $token ],
+            push @tree, {
+                class    => 'Markdown::Compiler::Parser::Node::Paragraph::Bold',
+                content  => $token->content,
+                tokens   => [ $token ],
                 children => [ $self->_parse_paragraph( \@todo ) ],
-            );
+            };
             next;
         }
 
@@ -539,17 +392,18 @@ sub _parse_paragraph {
             }
 
             # Process the children with _parse_paragraph.
-            push @tree, Markdown::Compiler::Parser::Node::Paragraph::Italic->new(
-                content => $token->content,
-                tokens  => [ $token ],
+            push @tree, {
+                class    => 'Markdown::Compiler::Parser::Node::Paragraph::Italic',
+                content  => $token->content,
+                tokens   => [ $token ],
                 children => [ $self->_parse_paragraph( \@todo ) ],
-            );
+            };
             next;
         }
         
         # Unknown Token?
         else {
-            die "Parser::_parse_paragraph() could not handle token " . $token->type;
+            die "Parser::_parse_paragraph() could not handle token " . $token->{type};
         }
     }
     return @tree;
@@ -571,11 +425,12 @@ sub _parse_table_row {
             last if $todo_token->type eq 'LineBreak';
             push @todo, $todo_token;
         }
-        push @tree, Markdown::Compiler::Parser::Node::Table::Cell->new(
-            content => $token->content,
-            tokens  => [ $token ],
+        push @tree, {
+            class    => 'Markdown::Compiler::Parser::Node::Table::Cell',
+            content  => $token->content,
+            tokens   => [ $token ],
             children => [ $self->_parse_paragraph( \@todo ) ],
-        );
+        };
         next;
     }
 
@@ -614,11 +469,12 @@ sub _parse_table {
             }
 
             # Process the children with _parse_paragraph.
-            push @tree, Markdown::Compiler::Parser::Node::Table::Row->new(
-                content => $token->content,
-                tokens  => [ $token ],
+            push @tree, {
+                class    => 'Markdown::Compiler::Parser::Node::Table::Row',
+                content  => $token->content,
+                tokens   => [ $token ],
                 children => [ $self->_parse_table_row( \@todo ) ],
-            );
+            };
             next;
         }
     }
@@ -668,10 +524,11 @@ sub _parse_blockquote {
 
         next if $token->type eq 'BlockQuote';
 
-        push @tree, Markdown::Compiler::Parser::Node::BlockQuote::String->new(
+        push @tree, {
+            class   => 'Markdown::Compiler::Parser::Node::BlockQuote::String',
             content => $token->content,
             tokens  => [ $token ],
-        );
+        };
     }
     return @tree;
 }
@@ -689,11 +546,12 @@ sub _parse_codeblock {
         if ( $token->type eq 'CodeBlock' ) {
             return @tree;
         }
-
-        push @tree, Markdown::Compiler::Parser::Node::CodeBlock::String->new(
+        
+        push @tree, {
+            class   => 'Markdown::Compiler::Parser::Node::CodeBlock::String',
             content => $token->content,
             tokens  => [ $token ],
-        );
+        };
     }
     return @tree;
 }
@@ -733,19 +591,21 @@ sub _parse_list_item {
 
         # Handle links in list
         if ( $token->type eq 'Link' ) {
-            push @tree, Markdown::Compiler::Parser::Node::Paragraph::Link->new(
+            push @tree, { 
+                class   => 'Markdown::Compiler::Parser::Node::Paragraph::Link',
                 text    => $token->text,
                 title   => $token->title,
                 href    => $token->href,
                 tokens  => [ $token ],
-            );
+            };
             next;
         }
 
-        push @tree, Markdown::Compiler::Parser::Node::List::Item::String->new(
+        push @tree, {
+            class   => 'Markdown::Compiler::Parser::Node::List::Item::String',
             content => $token->content,
             tokens  => [ $token ],
-        );
+        };
     }
 
     return @tree;
@@ -768,10 +628,11 @@ sub _parse_list_ordered {
 
         # Handle the next item ( root level )
         elsif ( $lvl == 0 and $token->type eq 'Item' ) {
-            push @tree, Markdown::Compiler::Parser::Node::List::Ordered::Item->new(
-                tokens => [ $token ],
+            push @tree, {
+                class    => 'Markdown::Compiler::Parser::Node::List::Ordered::Item',
+                tokens   => [ $token ],
                 children => [ $self->_parse_list_item( $tokens ) ],
-            );
+            };
             next;
         }
 
@@ -791,11 +652,12 @@ sub _parse_list_ordered {
                 $token = shift @{$tokens};
                 if ( $token->type eq 'Word' ) { # Golden, correct stay-in-list level
                     $token = shift @{$tokens}
-                        if $tokens->[0]->type eq 'Space'; # The space before the Item
-                    push @tree, Markdown::Compiler::Parser::Node::List::Ordered::Item->new(
-                        tokens => [ $token ],
+                        if $tokens->[0]->{type} eq 'Space'; # The space before the Item
+                    push @tree, {
+                        class    => 'Markdown::Compiler::Parser::Node::List::Ordered::Item',
+                        tokens   => [ $token ],
                         children => [ $self->_parse_list_item( $tokens ) ],
-                    );
+                    };
                     next;
                 }
                 die "Error: It shouldn't have gotten here, we're fucked";
@@ -813,17 +675,19 @@ sub _parse_list_ordered {
             elsif ( $token->length > $lvl ) {
                 if ( $token->content =~ /^\d+\.\s+$/ ) {
                     unshift @{$tokens}, $token;
-                    push @tree, Markdown::Compiler::Parser::Node::List::Ordered->new(
+                    push @tree, {
+                        class    => 'Markdown::Compiler::Parser::Node::List::Ordered',
                         tokens   => [ ],
                         children => [ $self->_parse_list_ordered( $token->length, $tokens ) ]
-                    );
+                    };
                     next;
                 } else {
                     unshift @{$tokens}, $token;
-                    push @tree, Markdown::Compiler::Parser::Node::List::Unordered->new(
+                    push @tree, {
+                        class    => 'Markdown::Compiler::Parser::Node::List::Unordered',
                         tokens   => [ ],
-                        children => [ $self->_parse_list_unordered( $token->length, $tokens ) ]
-                    );
+                        children => [ $self->_parse_list_unordered( $token->{length}, $tokens ) ]
+                    };
                     next;
                 }
             }
@@ -854,10 +718,11 @@ sub _parse_list_unordered {
 
         # Handle the next item ( root level )
         elsif ( $lvl == 0 and $token->type eq 'Item' ) {
-            push @tree, Markdown::Compiler::Parser::Node::List::Unordered::Item->new(
-                tokens => [ $token ],
+            push @tree, { 
+                class    => 'Markdown::Compiler::Parser::Node::List::Unordered::Item',
+                tokens   => [ $token ],
                 children => [ $self->_parse_list_item( $tokens ) ],
-            );
+            };
             next;
         }
 
@@ -878,10 +743,11 @@ sub _parse_list_unordered {
                 if ( $token->type eq 'Char' ) { # Golden, correct stay-in-list level
                     $token = shift @{$tokens}
                         if $tokens->[0]->type eq 'Space'; # The space before the Item
-                    push @tree, Markdown::Compiler::Parser::Node::List::Unordered::Item->new(
-                        tokens => [ $token ],
+                    push @tree, {
+                        class    => 'Markdown::Compiler::Parser::Node::List::Unordered::Item',
+                        tokens   => [ $token ],
                         children => [ $self->_parse_list_item( $tokens ) ],
-                    );
+                    };
                     next;
                 }
                 die "Error: It shouldn't have gotten here, we're fucked";
@@ -898,17 +764,19 @@ sub _parse_list_unordered {
             elsif ( $token->length > $lvl ) {
                 if ( $token->content =~ /^\d+\.\s+$/ ) {
                     unshift @{$tokens}, $token;
-                    push @tree, Markdown::Compiler::Parser::Node::List::Ordered->new(
+                    push @tree, {
+                        class    => 'Markdown::Compiler::Parser::Node::List::Ordered',
                         tokens   => [ ],
                         children => [ $self->_parse_list_ordered( $token->length, $tokens ) ]
-                    );
+                    };
                     next;
                 } else {
                     unshift @{$tokens}, $token;
-                    push @tree, Markdown::Compiler::Parser::Node::List::Unordered->new(
+                    push @tree, {
+                        class    => 'Markdown::Compiler::Parser::Node::List::Unordered',
                         tokens   => [ ],
                         children => [ $self->_parse_list_unordered( $token->length, $tokens ) ]
-                    );
+                    };
                     next;
                 }
             }
@@ -953,17 +821,19 @@ sub _parse_list {
         if ( $token->type eq 'Item' ) {
             if ( $token->content =~ /^\d+\.\s+$/ ) {
                 unshift @{$tokens}, $token;
-                push @tree, Markdown::Compiler::Parser::Node::List::Ordered->new(
+                push @tree, {
+                    class    => 'Markdown::Compiler::Parser::Node::List::Ordered',
                     tokens   => [ ],
                     children => [ $self->_parse_list_ordered( 0, $tokens ) ]
-                );
+                };
                 next;
             } else {
                 unshift @{$tokens}, $token;
-                push @tree, Markdown::Compiler::Parser::Node::List::Unordered->new(
+                push @tree, {
+                    class    => 'Markdown::Compiler::Parser::Node::List::Unordered',
                     tokens   => [ ],
                     children => [ $self->_parse_list_unordered( 0, $tokens ) ]
-                );
+                };
                 next;
             }
         }

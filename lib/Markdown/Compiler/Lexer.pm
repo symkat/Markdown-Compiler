@@ -114,9 +114,14 @@ BEGIN {
         my $url_match = qr/$RE{URI}{HTTP}{ -scheme => 'https?' }(?:\#[A-z0-9-_]+)?/;
 
         sub type  { 'Image' }
+#        sub match {[
+#            qr/\G\!\[(.*)\]\(($url_match)\s+"([^"]+)"\s*\)/,
+#            qr/\G\!\[(.*)\]\(($url_match\s*)\)/,
+#            qr/\G\!($url_match)/,
+#        ]}
         sub match {[
-            qr/\G\!\[(.*)\]\(($url_match)\s+"([^"]+)"\s*\)/,
-            qr/\G\!\[(.*)\]\(($url_match\s*)\)/,
+            qr/\G\!\[(.*)\]\(([^ ]+)\s+"([^"]+)"\s*\)/,
+            qr/\G\!\[(.*)\]\(([^ ]+\s*)\)/,
             qr/\G\!($url_match)/,
         ]}
 
@@ -144,13 +149,13 @@ BEGIN {
             builder => sub {
                 my $content = shift->content;
 
-                if ( $content =~ /!\[(.*)\]\(($url_match)\s+"([^"]+)"\s*\)/ ) {
+                if ( $content =~ /!\[(.*)\]\(([^ ]+)\s+"([^"]+)"\s*\)/ ) {
                     return {
                         text  => $1,
                         href  => $2,
                         title => $3,
                     }
-                } elsif ( $content =~ /!\[(.*)\]\(($url_match\s*)\)/ ) {
+                } elsif ( $content =~ /!\[(.*)\]\(([^ ]+\s*)\)/ ) {
                     return {
                         text  => $1,
                         href  => $2,
