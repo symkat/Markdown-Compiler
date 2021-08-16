@@ -25,7 +25,7 @@ BEGIN {
             builder => sub {
                 my $self = shift;
 
-                my $lines = grep { $_ eq "\n" } (split(//, substr($self->source, 0, $self->start)));
+                my $lines = grep { $_ eq "\n" } (split(//, substr(${$self->source}, 0, $self->start)));
                 return $lines;
             },
         );
@@ -35,7 +35,7 @@ BEGIN {
             lazy    => 1,
             builder => sub { 
                 my $self = shift;  
-                return substr( $self->source, $self->start, ( $self->end - $self->start ) );
+                return substr( ${$self->source}, $self->start, ( $self->end - $self->start ) );
             },
         );
 
@@ -43,7 +43,6 @@ BEGIN {
         sub tokens {
             return shift;
         }
-
 
         1;
     }
@@ -487,12 +486,11 @@ BEGIN {
         package Markdown::Compiler::Lexer::Token::Word;
         use Moo;
         extends 'Markdown::Compiler::Lexer::Token';
-        use Regexp::Common qw( URI );
 
-        # I'm not really sure why I have this... I should have documented this,
-        # but 8 years ago I thought this was a good idea.
+        # We'll match words to avoid making too many objects, such
+        # that "Hello World" becomes 11 objects. 
         sub type  { 'Word' }
-        sub match { [ qr/\G(.+?)(?=\\|\*|\#|_|$RE{URI}{HTTP}{ -scheme => 'https?' }|\n|\s)/ ] }
+        sub match { [ qr|\G[a-zA-Z]+|, qr|\G\d+\.\d+|, qr|\G\d+|  ] }
 
         1;
     }
@@ -509,6 +507,7 @@ BEGIN {
     }
 }
 use Moo;
+use v5.10;
 
 has source => (
     is       => 'ro',
@@ -563,7 +562,7 @@ has lexer_tokens => (
             Markdown::Compiler::Lexer::Token::BoldItalicMaker
             Markdown::Compiler::Lexer::Token::LineBreak
             Markdown::Compiler::Lexer::Token::Space
-
+            Markdown::Compiler::Lexer::Token::Word
             Markdown::Compiler::Lexer::Token::Char
         )];
     # Removed from betweenb Space and Char, might have been
@@ -589,7 +588,7 @@ sub _build_tokens {
             foreach my $match ( @{$matches} ) {
                 if ( $str =~ m|$match|gc ) {
                     push @tokens, $token_class->new( 
-                        source => $self->source,
+                        source => \$self->source,
                         start  => $start_pos,
                         end    => pos($str),
                     )->tokens;
