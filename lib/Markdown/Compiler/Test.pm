@@ -102,6 +102,22 @@ sub _test_run_assert_parse_tree {
     print Dumper($tree);
 }
 
+sub _test_run_assert_parser {
+    my ( $compiler, $name, $file, $line, $match ) = @_;
+
+    my $tree = $compiler->parser->tree;
+
+    cmp_deeply( $tree, $match, sprintf( "%s:%d: %s", $file, $line, $name ) );
+}
+
+sub _test_run_assert_lexer {
+    my ( $compiler, $name, $file, $line, $match ) = @_;
+
+    my @stream = map { ref($_) } @{$compiler->parser->stream};
+
+    cmp_deeply( \@stream, $match, sprintf( "%s:%d: %s", $file, $line, $name ) );
+}
+
 
 # This one I need to think through!
 sub _test_run_result_is {

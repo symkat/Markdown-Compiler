@@ -4,6 +4,19 @@ use Markdown::Compiler::Test;
 build_and_test( "Single string of text.",
     "Hello World", [
     [ result_is => "<p>Hello World</p>\n\n" ],
+    [ assert_parser => [{
+        'class' => 'Markdown::Compiler::Parser::Node::Paragraph',
+        'children' => [[
+            { 'class' => 'Markdown::Compiler::Parser::Node::Paragraph::String', content => "Hello" },
+            { 'class' => 'Markdown::Compiler::Parser::Node::Paragraph::String', content => " "     },
+            { 'class' => 'Markdown::Compiler::Parser::Node::Paragraph::String', content => "World" },
+        ]]
+    }]],
+    [ assert_lexer => [qw(
+        Markdown::Compiler::Lexer::Token::Word
+        Markdown::Compiler::Lexer::Token::Space
+        Markdown::Compiler::Lexer::Token::Word
+    )]],
 ]);
 
 build_and_test( "Single new-line is ignored.",

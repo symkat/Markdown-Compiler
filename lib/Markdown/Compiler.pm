@@ -54,8 +54,11 @@ has compiler => (
 sub compiler_for {
     my ( $self, $target ) = @_;
 
-    return use_module("Markdown::Compiler::Target::$target")
-        ->new( tree => $self->tree );
+    $target = substr($target,0,1) eq '+'
+        ? substr($target,1)
+        : 'Markdown::Compiler::Target::' . $target;
+
+    return use_module("$target")->new( tree => $self->tree );
 }
 
 has result => (
