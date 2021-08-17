@@ -202,7 +202,7 @@ sub _parse {
         elsif ( $token->type eq 'CodeBlock' ) {
             push @tree, {
                 class    => 'Markdown::Compiler::Parser::Node::CodeBlock',
-                language => $token->{language},
+                language => $token->language,
 #                tokens   => [ $token ],
                 children => [ $self->_parse_codeblock( $tokens ) ],
             };
