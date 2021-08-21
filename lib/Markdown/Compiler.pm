@@ -89,7 +89,11 @@ Markdown::Compiler - A Markdown Compiler
 
 =head1 DESCRIPTION
 
-Markdown::Compiler is a malleable markdown parser and compiler.
+Markdown::Compiler makes it easy to customize the rendering of a Markdown document.
+
+Markdown::Compiler parses Markdown documents with a hand-rolled lexer and parser.  A compiler then turns the parse tree into the target document.
+
+The stream of tokens from the lexer and the parse tree itself as easily dumped.
 
 =head1 SYNOPSIS
 

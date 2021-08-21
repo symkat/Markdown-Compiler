@@ -57,4 +57,24 @@ define compiler => (
 );
 
 
+if ( ! @ARGV ) {
+    print "Usage:\n\n";
+    print "markdown-compiler <command> [filename] <--options>\n\n";
+    print "Commands:\n";
+    print "  compiler - turn a markdown file into the target document.\n";
+    print "             --target - The compiler to use (Default HTML)\n\n";
+    print "  parser   - Dump the parse tree of the markdown document.\n\n";
+    print "  lexer    - Dump the lexer token stream of the markdown document.\n\n";
+    print "Examples:\n";
+    print "  Use the M::C::Target::Custom target to render the contents of the file myfile.md\n";
+    print "    \$ markdown-compiler compiler myfile.md --target Custom\n\n";
+    print "  Use the default target, HTML to render the contents of myfile.md\n";
+    print "    \$ markdown-compiler compiler myfile.md\n\n";
+    print "  Show the stream of tokens for the file myfile.md\n";
+    print "    \$ markdown-compiler lexer myfile.md \n\n";
+    print "  Show the parse tree for the file myfile.md\n";
+    print "    \$ markdown-compiler parser myfile.md \n\n";
+    exit 0;
+}
+
 oCLI->new( root => 'main', render_root => 'oCLI' )->run( @ARGV );
