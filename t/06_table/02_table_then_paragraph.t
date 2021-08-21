@@ -21,7 +21,7 @@ Hello World
 @@ html
 <table>
 <tr>
-<td>Foo </td>
+<th>Foo </th>
 </tr>
 <tr>
 <td>Baz </td>

@@ -30,4 +30,51 @@ sub paragraph_image {
     }
 }
 
+## 
+#sub table_cell {
+#    my ( $self, $node, $content ) = @_;
+#    
+#    return sprintf( "<td>%s%s</td>\n", $node->{content}, $content );
+#
+#}
+#
+#sub table_row {
+#    my ( $self, $node, $content ) = @_;
+#    
+#    return "<tr>\n$content</tr>\n";
+#}
+
+sub table {
+    my ( $self, $node, $content ) = @_;
+
+    return "<table class='table'>\n$content</table>\n\n";
+}
+
+sub ordered_list {
+    my ( $self, $node, $content ) = @_;
+
+    return qq|<ol>\n$content\n</ol>\n|;
+
+}
+
+sub unordered_list {
+    my ( $self, $node, $content ) = @_;
+
+    return qq|<li>\n$content\n</li>\n|;
+
+}
+
+sub list_item {
+    my ( $self, $node, $content ) = @_;
+
+    return qq|<li>$content</li>\n|;
+
+}
+
+sub list_item_string {
+    my ( $self, $node ) = @_;
+
+    return $node->{content};
+}
+
 1;

@@ -14,6 +14,7 @@ __DATA__
 
 @@ markdown
 | Foo |
+|-----|
 | Baz |
 
 @@ html

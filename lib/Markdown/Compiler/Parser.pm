@@ -437,11 +437,40 @@ sub _parse_table_row {
     return @tree;
 }
 
+sub _parse_table_header_row {
+    my ( $self, $tokens ) = @_;
+    
+    my @tree;
+
+    # We must eat from here to 
+    while ( my $token = shift @{ $tokens } ) {
+        last if $token->type eq 'LineBreak';
+
+        my @todo;
+        # Eat all of the tokens from here until the next |
+        while ( defined ( my $todo_token = shift @{ $tokens } ) ) {
+            last if $todo_token->type eq 'Char' and $todo_token->content eq '|';
+            last if $todo_token->type eq 'LineBreak';
+            push @todo, $todo_token;
+        }
+        push @tree, {
+            class    => 'Markdown::Compiler::Parser::Node::Table::HeaderCell',
+            content  => $token->content,
+#            tokens   => [ $token ],
+            children => [ $self->_parse_paragraph( \@todo ) ],
+        };
+        next;
+    }
+
+    return @tree;
+}
+
 sub _parse_table {
     my ( $self, $tokens ) = @_;
     
     my @tree;
 
+    my $is_first_row = 1;
     while ( defined ( my $token = shift @{ $tokens } ) ) {
         # Exit Conditions:
         #
@@ -469,12 +498,22 @@ sub _parse_table {
             }
 
             # Process the children with _parse_paragraph.
-            push @tree, {
-                class    => 'Markdown::Compiler::Parser::Node::Table::Row',
-                content  => $token->content,
-#                tokens   => [ $token ],
-                children => [ $self->_parse_table_row( \@todo ) ],
-            };
+            if ( $is_first_row ) {
+                push @tree, {
+                    class    => 'Markdown::Compiler::Parser::Node::Table::Row',
+                    content  => $token->content,
+    #                tokens   => [ $token ],
+                    children => [ $self->_parse_table_header_row( \@todo ) ],
+                };
+                $is_first_row = 0;
+            } else {
+                push @tree, {
+                    class    => 'Markdown::Compiler::Parser::Node::Table::Row',
+                    content  => $token->content,
+    #                tokens   => [ $token ],
+                    children => [ $self->_parse_table_row( \@todo ) ],
+                };
+            }
             next;
         }
     }

@@ -41,6 +41,7 @@ has functions => (
             'Markdown::Compiler::Parser::Node::Table'                  => 'table',
             'Markdown::Compiler::Parser::Node::Table::Row'             => 'table_row',
             'Markdown::Compiler::Parser::Node::Table::Cell'            => 'table_cell',
+            'Markdown::Compiler::Parser::Node::Table::HeaderCell'      => 'table_header_cell',
 
             'Markdown::Compiler::Parser::Node::BlockQuote'             => 'blockquote',
             'Markdown::Compiler::Parser::Node::BlockQuote::String'     => 'blockquote_string',
@@ -183,6 +184,13 @@ sub paragraph_image {
             $node->{text} ? $node->{text} : $node->{href},
         );
     }
+}
+
+sub table_header_cell {
+    my ( $self, $node, $content ) = @_;
+    
+    return sprintf( "<th>%s%s</th>\n", $node->{content}, $content );
+
 }
 
 sub table_cell {
