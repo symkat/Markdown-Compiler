@@ -83,7 +83,6 @@ sub _build_parsed {
     foreach my $line ( split( /\n/, $self->source )) {
         $line = "$line\n";
 
-        print "Looking at line: $line";
         # First line, see if we have an alternative metatype.
         if ( $is_first_line ) {
             if ( $line =~ /^---\s+(\S+)\s?$/) {
